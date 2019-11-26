@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -z "$VERSION" -o -z "$ROOT" ]; then
+if [ -z "$PROJECT" -o -z "$VERSION" -o -z "$ROOT" ]; then
     echo 'Missing environment variables!'
     exit 1
 fi
@@ -20,7 +20,7 @@ rm -rf dist && mkdir dist
 echo
 echo '> Packaging...'
 for build in $(ls ./build); do
-    tar -czf ./dist/$build.tar.gz -C ./build/$build $(ls ./build/$build)
+    tar -czf ./dist/$PROJECT-$VERSION.$build.tar.gz -C ./build/$build $(ls ./build/$build)
     echo "- $build finished"
 done
 
