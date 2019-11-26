@@ -1,0 +1,33 @@
+root: /mnt/files
+
+keepers:
+  - alice
+  - bob
+
+teams:
+  all:
+    - alice
+    - bob
+    - chuck
+    - dave
+    - erin
+    - frank
+    - grace
+  team-1:
+    - bob
+    - frank
+  team-2:
+    - alice
+    - dave
+    - erin
+    - grace
+  team-3:
+    - chuck
+    - dave
+
+permissions:
+  - ^foo/:
+      - +team-1
+  - ^foo/bar/lorem ipsum\.txt$:
+      - -team-1
+      - +chuck
