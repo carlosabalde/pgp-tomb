@@ -14,15 +14,76 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 )
 
+const (
+	bashCompletionFunc = `
+__pgp-tomb_complete_secret_uri() {
+	# See:
+	#   - https://superuser.com/questions/564716/bash-completion-for-filename-patterns-or-directories
+	#   - https://debian-administration.org/article/317/An_introduction_to_bash_completion_part_2
+
+	compopt -o nospace
+
+	local IFS=$'\n'
+	local LASTCHAR=' '
+	local secrets
+
+	if [ -z "$PGP_TOMB_ROOT" ]; then
+		if [ -d "secrets" ]; then
+			secrets=$(pwd)/secrets
+		fi
+	else
+		secrets=$PGP_TOMB_ROOT/secrets
+	fi
+
+	if [ ! -z "$secrets" ]; then
+		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.pgp' -- "$cur"))
+
+		if [ "${#COMPREPLY[@]}" == "1" ]; then
+			if [ -d "$secrets/$COMPREPLY" ]; then
+				LASTCHAR=/
+				COMPREPLY=$(printf %q%s "$COMPREPLY" "$LASTCHAR")
+			elif [ -f "$secrets/$COMPREPLY" ]; then
+				COMPREPLY=$(printf %q "${COMPREPLY%.pgp}")
+			fi
+		else
+			for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
+				[ -d "$secrets/${COMPREPLY[$i]}" ] && \
+					COMPREPLY[$i]=${COMPREPLY[$i]}/
+				[ -f "$secrets/${COMPREPLY[$i]}" ] && \
+					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.pgp}")
+			done
+		fi
+	else
+		echo "Please set PGP_TOMB_ROOT!"
+	fi
+}
+
+__pgp-tomb_custom_func() {
+	case ${last_command} in
+		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_set)
+			__pgp-tomb_complete_secret_uri
+			return
+			;;
+		*)
+			;;
+	esac
+}
+`
+)
+
 var (
-	version string
+	version  string
 	revision string
-	cfgFile string
-	verbose bool
-	root    string
-	rootCmd = &cobra.Command{
-		Use:     "pgp-tomb",
-		Version: version,
+	cfgFile  string
+	verbose  bool
+	root     string
+	rootCmd  = &cobra.Command{
+		Use:                    "pgp-tomb",
+		Version:                version,
+		BashCompletionFunction: bashCompletionFunc,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			initConfig()
+		},
 	}
 )
 
@@ -72,12 +133,11 @@ func initConfig() {
 func main() {
 	// Initializations.
 	syscall.Umask(0077)
-	cobra.OnInitialize(initConfig)
 
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
-		"PGP Tomb version {{.Version}} (%s)\n" +
-		"Copyright (c) 2019 Carlos Abalde\n", revision))
+		"PGP Tomb version {{.Version}} (%s)\n"+
+			"Copyright (c) 2019 Carlos Abalde\n", revision))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(
@@ -205,7 +265,35 @@ func main() {
 		&cmdListKey, "key", "",
 		"list only secrets readable by this key alias")
 
+	// 'bash' command.
+	cmdBash := &cobra.Command{
+		Use:   "bash",
+		Short: "Generate Bash completion script",
+		Args:  cobra.NoArgs,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Skip initConfig().
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenBashCompletion(os.Stdout)
+		},
+	}
+
+	// 'zsh' command.
+	cmdZsh := &cobra.Command{
+		Use:   "zsh",
+		Short: "Generate Zsh completion script",
+		Args:  cobra.NoArgs,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Skip initConfig().
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenZshCompletion(os.Stdout)
+		},
+	}
+
 	// Register commands & execute.
-	rootCmd.AddCommand(cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList)
+	rootCmd.AddCommand(
+		cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList, cmdBash,
+		cmdZsh)
 	rootCmd.Execute()
 }
