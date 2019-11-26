@@ -48,12 +48,12 @@ SETUP
    ```
 
 4. Optionally you can configure Bash or Zsh completions. For example, for Bash adjust your `.bashrc` as follows.
-  ```
-  ...
-  source /etc/bash_completion
-  source <(pgp-tomb bash)
-  export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
-  ```
+   ```
+   ...
+   source /etc/bash_completion
+   source <(pgp-tomb bash)
+   export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
+   ```
 
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.
    ```
