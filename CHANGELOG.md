@@ -1,4 +1,4 @@
-- v0.0.3 (2019-11-27):
+- v0.0.4 (2019-11-27):
     + Look for configuration also in --root, when provided.
     + Add some useful command aliases.
 
