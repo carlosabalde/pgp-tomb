@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"syscall"
 
@@ -15,6 +16,7 @@ import (
 
 var (
 	version string
+	revision string
 	cfgFile string
 	verbose bool
 	root    string
@@ -71,6 +73,11 @@ func main() {
 	// Initializations.
 	syscall.Umask(0077)
 	cobra.OnInitialize(initConfig)
+
+	// Customize version template.
+	rootCmd.SetVersionTemplate(fmt.Sprintf(
+		"PGP Tomb version {{.Version}} (%s)\n" +
+		"Copyright (c) 2019 Carlos Abalde\n", revision))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(
