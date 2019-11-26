@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -64,6 +65,7 @@ func initConfig() {
 
 func main() {
 	// Initializations.
+	syscall.Umask(0077)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags.
