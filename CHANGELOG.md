@@ -1,7 +1,6 @@
-- v0.0.3 (?):
+- v0.0.3 (2019-11-26):
     + Use current folder instead of binary folder as default root.
     + Enforce umask 0777.
-    + ...
 
 - v0.0.2 (2019-11-26):
     + Cosmetic.
