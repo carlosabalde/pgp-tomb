@@ -17,6 +17,7 @@ var (
 	version string
 	cfgFile string
 	verbose bool
+	root    string
 	rootCmd = &cobra.Command{
 		Use:     "pgp-tomb",
 		Version: version,
@@ -42,6 +43,9 @@ func initConfig() {
 		viper.AddConfigPath("/etc/pgp-tomb")
 		viper.AddConfigPath("$HOME/.pgp-tomb")
 		viper.AddConfigPath(".")
+		if root != "" {
+			viper.AddConfigPath(root)
+		}
 	}
 
 	// Load configuration.
@@ -75,8 +79,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(
 		&verbose, "verbose", "v", false,
 		"enable verbose output")
-	rootCmd.PersistentFlags().String(
-		"root", "",
+	rootCmd.PersistentFlags().StringVar(
+		&root, "root", "",
 		"override 'root' option in config file")
 	viper.BindPFlag("root", rootCmd.PersistentFlags().Lookup("root"))
 
@@ -84,8 +88,9 @@ func main() {
 	var cmdGetFile string
 	var cmdGetCopy bool
 	cmdGet := &cobra.Command{
-		Use:   "get",
-		Short: "Read secret",
+		Use:     "get",
+		Aliases: []string{"cat"},
+		Short:   "Read secret",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -109,8 +114,9 @@ func main() {
 	// 'set' command.
 	var cmdSetFile string
 	cmdSet := &cobra.Command{
-		Use:   "set",
-		Short: "Create / update secret",
+		Use:     "set",
+		Aliases: []string{"add"},
+		Short:   "Create / update secret",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -177,9 +183,10 @@ func main() {
 	var cmdListLimit string
 	var cmdListKey string
 	cmdList := &cobra.Command{
-		Use:   "list",
-		Short: "List secrets",
-		Args:  cobra.NoArgs,
+		Use:     "list",
+		Aliases: []string{"ls", "dir"},
+		Short:   "List secrets",
+		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.List(cmdListLimit, cmdListKey)
 		},
