@@ -22,6 +22,7 @@ if [ ! "$(docker ps -a -q -f name=$CONTAINER_NAME)" ]; then \
     docker run \
         --detach \
         --name $CONTAINER_NAME \
+        --env GITHUB_TOKEN="$PGP_TOMB_GITHUB_TOKEN" \
         -v $ROOT:/mnt \
         $IMAGE_NAME
 fi
