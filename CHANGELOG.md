@@ -1,5 +1,8 @@
-- v0.0.6 (?):
+- v0.0.7 (?):
     + ...
+
+- v0.0.6 (2019-11-27):
+    + Add Bash & Zsh completions.
 
 - v0.0.5 (2019-11-27):
     + Include git hash in --version output.
