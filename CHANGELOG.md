@@ -1,3 +1,9 @@
+- v0.0.6 (?):
+    + ...
+
+- v0.0.5 (2019-11-27):
+    + Include git hash in --version output.
+
 - v0.0.4 (2019-11-27):
     + Look for configuration also in --root, when provided.
     + Add some useful command aliases.
