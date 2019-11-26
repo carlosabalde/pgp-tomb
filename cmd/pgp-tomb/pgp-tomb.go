@@ -15,12 +15,12 @@ import (
 )
 
 var (
-	version string
+	version  string
 	revision string
-	cfgFile string
-	verbose bool
-	root    string
-	rootCmd = &cobra.Command{
+	cfgFile  string
+	verbose  bool
+	root     string
+	rootCmd  = &cobra.Command{
 		Use:     "pgp-tomb",
 		Version: version,
 	}
@@ -76,8 +76,8 @@ func main() {
 
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
-		"PGP Tomb version {{.Version}} (%s)\n" +
-		"Copyright (c) 2019 Carlos Abalde\n", revision))
+		"PGP Tomb version {{.Version}} (%s)\n"+
+			"Copyright (c) 2019 Carlos Abalde\n", revision))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(
@@ -205,7 +205,29 @@ func main() {
 		&cmdListKey, "key", "",
 		"list only secrets readable by this key alias")
 
+	// 'bash' command.
+	cmdBash := &cobra.Command{
+		Use:   "bash",
+		Short: "Generate Bash completion script",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenBashCompletion(os.Stdout)
+		},
+	}
+
+	// 'zsh' command.
+	cmdZsh := &cobra.Command{
+		Use:   "zsh",
+		Short: "Generate Zsh completion script",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenZshCompletion(os.Stdout)
+		},
+	}
+
 	// Register commands & execute.
-	rootCmd.AddCommand(cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList)
+	rootCmd.AddCommand(
+		cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList, cmdBash,
+		cmdZsh)
 	rootCmd.Execute()
 }
