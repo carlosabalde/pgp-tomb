@@ -11,7 +11,7 @@ SETUP
 
 1. For Go >= 1.13, simply run the following command. Otherwise, you can use a Docker container (see next section) to build a PGP Tomb executable matching your platform (i.e. `make build`).
    ```
-   $ go get -u github.com/carlosabalde/pgp-tomb
+   $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
 2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor is required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.pgp` files will populate this folder once you start using the manager).
