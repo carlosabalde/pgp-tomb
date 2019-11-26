@@ -25,9 +25,9 @@ help:
 	@echo 'make build-dev - build $(PROJECT) for OS-ARCH set by GOOS and GOARCH env variables'
 	@echo 'make fmt - run gofmt & goimports'
 	@echo 'make lint - run golangci-lint'
+	@echo 'make mod - run assorted modules stuff'
 	@echo 'make test - run tests'
 	@echo 'make dist - build & create packages with hashsums'
-	@echo 'make mod - run assorted modules stuff'
 
 .PHONY: docker
 docker:
@@ -41,10 +41,6 @@ build:
 build-dev:
 	@scripts/build.sh dev
 
-.PHONY: dist
-dist:
-	@scripts/dist.sh
-
 .PHONY: fmt
 fmt:
 	@scripts/fmt.sh
@@ -52,10 +48,6 @@ fmt:
 .PHONY: lint
 lint:
 	@scripts/lint.sh
-
-.PHONY: test
-test:
-	@scripts/test.sh
 
 .PHONY: mod
 mod:
@@ -71,3 +63,11 @@ mod:
 		echo '> Printing module requirement graph...'; \
 		go mod graph; \
 	)
+
+.PHONY: test
+test:
+	@scripts/test.sh
+
+.PHONY: dist
+dist:
+	@scripts/dist.sh

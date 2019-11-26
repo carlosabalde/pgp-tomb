@@ -9,7 +9,7 @@
 SETUP
 =====
 
-1. For Go >= 1.13, simply run the following command. Otherwise, you can use a Docker container (see next section) to build a PGP Tomb executable matching your platform (i.e. `make build`).
+1. Download the PGP Tomb executable matching your platform from the [releases page](https://github.com/carlosabalde/pgp-tomb/releases). Alternatively, for Go >= 1.13, you can run the following command. Finally, you can also use a Docker container (see next section) to build your own executable (i.e. `make build`).
    ```
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
