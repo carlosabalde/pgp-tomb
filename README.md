@@ -1,4 +1,4 @@
-PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
+**PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
 - Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted using one or more public keys (i.e. recipients).
 
