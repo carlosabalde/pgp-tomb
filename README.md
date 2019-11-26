@@ -55,6 +55,13 @@ SETUP
    export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
    ```
 
+   Same thing in MacOS requires some extra steps: (1) install a modern Bash and the completion extension (e.g. `port install bash bash-completion`); (2) add `/opt/local/bin/bash` to the list of allowed shell in `/etc/shells`; and (3) change your default shell (i.e. `chsh -s /opt/local/bin/bash`).
+   ```
+   source /opt/local/etc/profile.d/bash_completion.sh
+   source <(pgp-tomb bash)
+   export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
+   ```
+
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.
    ```
    # Show command line options.   
