@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"os"
-	"path/filepath"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,14 +33,6 @@ func initConfig() {
 		logrus.SetLevel(logrus.WarnLevel)
 	}
 
-	// Find root folder (i.e. folder of the binary).
-	root, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Fatal("Failed to determine root folder!")
-	}
-
 	// Get ready to load configuration.
 	viper.SetConfigType("yaml")
 	if cfgFile != "" {
@@ -49,7 +41,6 @@ func initConfig() {
 		viper.SetConfigName("pgp-tomb")
 		viper.AddConfigPath("/etc/pgp-tomb")
 		viper.AddConfigPath("$HOME/.pgp-tomb")
-		viper.AddConfigPath(root)
 		viper.AddConfigPath(".")
 	}
 
@@ -69,11 +60,12 @@ func initConfig() {
 	}
 
 	// Validate & initialize configuration.
-	config.Init(root)
+	config.Init()
 }
 
 func main() {
 	// Initializations.
+	syscall.Umask(0077)
 	cobra.OnInitialize(initConfig)
 
 	// Global flags.

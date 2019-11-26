@@ -16,8 +16,8 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Init(root string) {
-	initRootConfig(root)
+func Init() {
+	initRootConfig()
 	initGPGConfig()
 	initEditorConfig()
 	initPublicKeysConfig()
@@ -27,8 +27,14 @@ func Init(root string) {
 	initPermissionsConfig()
 }
 
-func initRootConfig(root string) {
+func initRootConfig() {
 	if !viper.IsSet("root") || viper.GetString("root") == "" {
+		root, err := os.Getwd()
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Fatal("Failed to determine root folder!")
+		}
 		viper.Set("root", root)
 	}
 
