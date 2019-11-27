@@ -298,6 +298,9 @@ func main() {
 			// Skip initConfig().
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			// XXX: custom completion function for secret URIs not yet available
+			// for Zsh. See:
+			//   - https://github.com/spf13/cobra/pull/884
 			rootCmd.GenZshCompletion(os.Stdout)
 		},
 	}
