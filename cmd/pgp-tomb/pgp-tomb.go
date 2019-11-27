@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	bashCompletionFunc = `
+	bashCompletionFunction = `
 __pgp-tomb_complete_secret_uri() {
 	# See:
 	#   - https://superuser.com/questions/564716/bash-completion-for-filename-patterns-or-directories
@@ -73,7 +73,7 @@ var (
 	rootCmd  = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                version,
-		BashCompletionFunction: bashCompletionFunc,
+		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
 		},
