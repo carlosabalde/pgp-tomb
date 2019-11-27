@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -16,7 +17,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(grep string, dryRun bool) {
+func Rebuild(folder, grep string, dryRun bool) {
 	// Initializations.
 	checked := 0
 	var grepRegexp *regexp.Regexp
@@ -33,9 +34,18 @@ func Rebuild(grep string, dryRun bool) {
 		grepRegexp = nil
 	}
 
+	// Check folder.
+	root := path.Join(config.GetSecretsRoot(), folder)
+	if folder != "" {
+		if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
+			fmt.Fprintln(os.Stderr, "Folder does not exist!")
+			os.Exit(1)
+		}
+	}
+
 	// Walk file system.
 	if err := filepath.Walk(
-		config.GetSecretsRoot(),
+		root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

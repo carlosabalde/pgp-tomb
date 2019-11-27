@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,7 +14,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func List(grep, keyAlias string) {
+func List(folder, grep, keyAlias string) {
 	// Initialize grep.
 	var grepRegexp *regexp.Regexp
 	if grep != "" {
@@ -41,9 +42,18 @@ func List(grep, keyAlias string) {
 		key = nil
 	}
 
+	// Check folder.
+	root := path.Join(config.GetSecretsRoot(), folder)
+	if folder != "" {
+		if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
+			fmt.Fprintln(os.Stderr, "Folder does not exist!")
+			os.Exit(1)
+		}
+	}
+
 	// Walk file system.
 	if err := filepath.Walk(
-		config.GetSecretsRoot(),
+		root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

@@ -60,7 +60,7 @@ __pgp-tomb_complete_secret_uri() {
 
 __pgp-tomb_custom_func() {
 	case ${last_command} in
-		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_set)
+		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_list | pgp-tomb_rebuild | pgp-tomb_set)
 			__pgp-tomb_complete_secret_uri
 			return
 			;;
@@ -232,11 +232,20 @@ func main() {
 	var cmdRebuildGrep string
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
-		Use:   "rebuild",
+		Use:   "rebuild [folder]",
 		Short: "Rebuild / check secrets",
-		Args:  cobra.NoArgs,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("rebuilding multiple folders is not supported")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Rebuild(cmdRebuildGrep, cmdRebuildDryRun)
+			var folder string = ""
+			if len(args) > 0 {
+				folder = args[0]
+			}
+			core.Rebuild(folder, cmdRebuildGrep, cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
@@ -250,11 +259,20 @@ func main() {
 	var cmdListGrep string
 	var cmdListKey string
 	cmdList := &cobra.Command{
-		Use:     "list",
+		Use:     "list [folder]",
 		Aliases: []string{"ls", "dir"},
-		Short:   "List secrets",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("listing multiple folders is not supported")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.List(cmdListGrep, cmdListKey)
+			var folder string = ""
+			if len(args) > 0 {
+				folder = args[0]
+			}
+			core.List(folder, cmdListGrep, cmdListKey)
 		},
 	}
 	cmdList.PersistentFlags().StringVar(
