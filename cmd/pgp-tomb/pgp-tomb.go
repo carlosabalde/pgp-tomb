@@ -155,9 +155,9 @@ func main() {
 	var cmdGetFile string
 	var cmdGetCopy bool
 	cmdGet := &cobra.Command{
-		Use:     "get",
-		Aliases: []string{"cat"},
-		Short:   "Read secret",
+		Use:     "get <secret URI>",
+		Aliases: []string{"cat", "show"},
+		Short:   "Show secret (defaults to stdout)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -181,9 +181,9 @@ func main() {
 	// 'set' command.
 	var cmdSetFile string
 	cmdSet := &cobra.Command{
-		Use:     "set",
+		Use:     "set <secret URI>",
 		Aliases: []string{"add", "insert"},
-		Short:   "Create / update secret",
+		Short:   "Create / update secret (defaults to stdin)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -200,8 +200,8 @@ func main() {
 
 	// 'edit' command.
 	cmdEdit := &cobra.Command{
-		Use:   "edit",
-		Short: "Edit secret",
+		Use:   "edit <secret URI>",
+		Short: "Edit secret using your preferred editor (defaults to $EDITOR)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -215,7 +215,7 @@ func main() {
 
 	// 'about' command.
 	cmdAbout := &cobra.Command{
-		Use:   "about",
+		Use:   "about <secret URI>",
 		Short: "Show details about secret",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
@@ -253,7 +253,6 @@ func main() {
 		Use:     "list",
 		Aliases: []string{"ls", "dir"},
 		Short:   "List secrets",
-		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.List(cmdListGrep, cmdListKey)
 		},
