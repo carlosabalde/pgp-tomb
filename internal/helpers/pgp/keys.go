@@ -1,7 +1,6 @@
 package pgp
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -22,7 +21,7 @@ func LoadASCIIArmoredPublicKey(alias string, input io.Reader) (*PublicKey, error
 	}
 
 	if block.Type != openpgp.PublicKeyType {
-		return nil, fmt.Errorf("invalid public key '%s'", alias)
+		return nil, errors.Errorf("invalid public key '%s'", alias)
 	}
 
 	reader := packet.NewReader(block.Body)

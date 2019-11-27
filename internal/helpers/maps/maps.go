@@ -1,8 +1,9 @@
 package maps
 
 import (
-	"errors"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 func KeysSlice(m interface{}) (reflect.Value, error) {
@@ -12,9 +13,9 @@ func KeysSlice(m interface{}) (reflect.Value, error) {
 	}
 
 	// Build a slice to hold the keys.
-  	keys := reflect.ValueOf(m).MapKeys()
-  	result := reflect.MakeSlice(reflect.SliceOf(
-  		reflect.TypeOf(m).Key()), len(keys), len(keys))
+	keys := reflect.ValueOf(m).MapKeys()
+	result := reflect.MakeSlice(reflect.SliceOf(
+		reflect.TypeOf(m).Key()), len(keys), len(keys))
 	for i, key := range keys {
 		result.Index(i).Set(key)
 	}

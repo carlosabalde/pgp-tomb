@@ -1,14 +1,15 @@
 package slices
 
 import (
-	"errors"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 func Union(arr1, arr2 interface{}) (reflect.Value, error) {
 	// Make sure inputs are slices.
 	if reflect.TypeOf(arr1).Kind() != reflect.Slice ||
-	   reflect.TypeOf(arr2).Kind() != reflect.Slice {
+		reflect.TypeOf(arr2).Kind() != reflect.Slice {
 		return reflect.Value{}, errors.New("not a slice")
 	}
 
@@ -32,7 +33,7 @@ func Union(arr1, arr2 interface{}) (reflect.Value, error) {
 func Difference(arr1, arr2 interface{}) (reflect.Value, error) {
 	// Make sure inputs are slices.
 	if reflect.TypeOf(arr1).Kind() != reflect.Slice ||
-	   reflect.TypeOf(arr2).Kind() != reflect.Slice {
+		reflect.TypeOf(arr2).Kind() != reflect.Slice {
 		return reflect.Value{}, errors.New("not a slice")
 	}
 
@@ -63,7 +64,7 @@ func Distinct(arr interface{}) (reflect.Value, error) {
 	return sliceFromMap(mapFromSlice(arr), arr), nil
 }
 
-func mapFromSlice(arr interface {}) map[interface{}]bool {
+func mapFromSlice(arr interface{}) map[interface{}]bool {
 	items := make(map[interface{}]bool)
 	slice := reflect.ValueOf(arr)
 	for i, n := 0, slice.Len(); i < n; i++ {
