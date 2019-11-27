@@ -144,7 +144,11 @@ func checkSecret(uri, path string, dryRun bool) {
 		}
 	}
 	if !reEncrypt && len(expectedKeysByAlias) > 0 {
-		keysAliases := maps.StringKeysSlice(expectedKeysByAlias)
+		res, err := maps.StringKeysSlice(expectedKeysByAlias)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		keysAliases := res.Interface().([]string)
 		sort.Strings(keysAliases)
 		fmt.Printf(
 			"- Re-encrypting '%s': missing recipients (%s)...",

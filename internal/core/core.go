@@ -3,6 +3,9 @@ package core
 import (
 	"os"
 	"path"
+	"reflect"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
@@ -29,25 +32,35 @@ func getPublicKeysForSecret(uri string) []*pgp.PublicKey {
 	for _, permission := range permissions {
 		if permission.Regexp.Match([]byte(uri)) {
 			for _, expression := range permission.Expressions {
+				var res reflect.Value
+				var err error
 				if expression.Deny {
-					aliases = slices.Difference(
+					res, err = slices.Difference(
 						aliases,
-						expression.Keys).Interface().([]string)
+						expression.Keys)
 				} else {
-					aliases = slices.Union(
+					res, err = slices.Union(
 						aliases,
-						expression.Keys).Interface().([]string)
+						expression.Keys)
 				}
+				if err != nil {
+					logrus.Fatal(err)
+				}
+				aliases = res.Interface().([]string)
 			}
 		}
 	}
-	aliases = slices.Union(aliases, config.GetKeepers()).Interface().([]string)
+	res, err := slices.Union(aliases, config.GetKeepers())
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	aliases = res.Interface().([]string)
 
 	// Expand key aliases to full 'pgp.PublicKey' instances.
 	keys := config.GetPublicKeys()
-	result := make([]*pgp.PublicKey, 0)
-	for _, alias := range aliases {
-		result = append(result, keys[alias])
+	result := make([]*pgp.PublicKey, len(aliases))
+	for i, alias := range aliases {
+		result[i] = keys[alias]
 	}
 	return result
 }

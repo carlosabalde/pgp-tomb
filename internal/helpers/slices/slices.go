@@ -1,10 +1,11 @@
 package slices
 
 import (
+	"errors"
 	"reflect"
 )
 
-func Union(arr1, arr2 interface{}) reflect.Value {
+func Union(arr1, arr2 interface{}) (reflect.Value, error) {
 	// Create a map to hold contents of both slices.
 	items := make(map[interface{}]bool)
 
@@ -13,9 +14,9 @@ func Union(arr1, arr2 interface{}) reflect.Value {
 	var kind reflect.Kind
 	unknownKind := true
 	for _, arr := range [2]interface{}{arr1, arr2} {
-		tmp, ok := distinct(arr)
-		if !ok {
-			return reflect.Value{}
+		tmp, err := distinct(arr)
+		if err != nil {
+			return reflect.Value{}, err
 		}
 
 		if unknownKind {
@@ -25,7 +26,7 @@ func Union(arr1, arr2 interface{}) reflect.Value {
 			}
 		} else {
 			if tmp.Len() > 0 && tmp.Index(0).Kind() != kind {
-				return reflect.Value{}
+				return reflect.Value{}, errors.New("incompatible slice types")
 			}
 		}
 
@@ -36,17 +37,17 @@ func Union(arr1, arr2 interface{}) reflect.Value {
 	}
 
 	// Create the result slice.
-	return done(arr1, items)
+	return done(arr1, items), nil
 }
 
-func Difference(arr1, arr2 interface{}) reflect.Value {
+func Difference(arr1, arr2 interface{}) (reflect.Value, error) {
 	// Create a map to hold contents of the first slice.
 	items := make(map[interface{}]bool)
 
 	// Put values of the first slice into the map.
-	tmpArr1, okArr1 := distinct(arr1)
-	if !okArr1 {
-		return reflect.Value{}
+	tmpArr1, errArr1 := distinct(arr1)
+	if errArr1 != nil {
+		return reflect.Value{}, errArr1
 	}
 	nArr1 := tmpArr1.Len()
 	for i := 0; i < nArr1; i++ {
@@ -55,12 +56,12 @@ func Difference(arr1, arr2 interface{}) reflect.Value {
 
 	// Remove values of the second slice from the map, checking that types are
 	// consistent.
-	tmpArr2, okArr2 := distinct(arr2)
-	if !okArr2 {
-		return reflect.Value{}
+	tmpArr2, errArr2 := distinct(arr2)
+	if errArr2 != nil {
+		return reflect.Value{}, errArr2
 	}
 	if tmpArr1.Len() > 0 && tmpArr2.Len() > 0 && tmpArr1.Index(0).Kind() != tmpArr2.Index(0).Kind() {
-		return reflect.Value{}
+		return reflect.Value{}, errors.New("incompatible slice types")
 	}
 	nArr2 := tmpArr2.Len()
 	for i := 0; i < nArr2; i++ {
@@ -68,14 +69,14 @@ func Difference(arr1, arr2 interface{}) reflect.Value {
 	}
 
 	// Create the result slice.
-	return done(arr1, items)
+	return done(arr1, items), nil
 }
 
-func distinct(arr interface{}) (reflect.Value, bool) {
+func distinct(arr interface{}) (reflect.Value, error) {
 	// Create a slice from the input interface.
 	slice := reflect.ValueOf(arr)
 	if slice.Kind() != reflect.Slice {
-		return reflect.Value{}, false
+		return reflect.Value{}, errors.New("not a slice")
 	}
 
 	// Create a map to hold contents of the slice.
@@ -88,7 +89,7 @@ func distinct(arr interface{}) (reflect.Value, bool) {
 	}
 
 	// Create the result slice.
-	return done(arr, items), true
+	return done(arr, items), nil
 }
 
 func done(arr interface{}, items map[interface{}]bool) reflect.Value {
@@ -96,9 +97,7 @@ func done(arr interface{}, items map[interface{}]bool) reflect.Value {
 
 	i := 0
 	for item := range items {
-		iValue := reflect.ValueOf(item)
-		oValue := result.Index(i)
-		oValue.Set(iValue)
+		result.Index(i).Set(reflect.ValueOf(item))
 		i++
 	}
 

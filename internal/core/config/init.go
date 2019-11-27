@@ -126,7 +126,11 @@ func initPublicKeysConfig() {
 		}).Fatal("Failed to load public keys!")
 	}
 
-	keysAliases := maps.StringKeysSlice(keys)
+	res, err := maps.StringKeysSlice(keys)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	keysAliases := res.Interface().([]string)
 	sort.Strings(keysAliases)
 	logrus.WithFields(logrus.Fields{
 		"folder": keysRoot,
@@ -198,7 +202,11 @@ func initTeamsConfig() {
 		}
 	}
 
-	teamsIds := maps.StringKeysSlice(teams)
+	res, err := maps.StringKeysSlice(teams)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	teamsIds := res.Interface().([]string)
 	sort.Strings(teamsIds)
 	logrus.WithFields(logrus.Fields{
 		"teams": strings.Join(teamsIds, ", "),
