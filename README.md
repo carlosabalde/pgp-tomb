@@ -14,7 +14,7 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor is required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.pgp` files will populate this folder once you start using the manager).
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.pgp` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
    |-- keys/
