@@ -1,5 +1,8 @@
-- v0.0.8 (?):
-    + ...
+- v0.0.9 (?):
+
+- v0.0.8 (2019-11-28):
+    + Always use secret URI completion as fallback in Bash completion.
+    + Improved internals and error handling.
 
 - v0.0.7 (2019-11-28):
     + Rename --limit flag to --grep in 'list' & 'rebuild' commands.

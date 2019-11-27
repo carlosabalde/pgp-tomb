@@ -35,16 +35,14 @@ func getPublicKeysForSecret(uri string) []*pgp.PublicKey {
 				var tmp reflect.Value
 				var err error
 				if expression.Deny {
-					tmp, err = slices.Difference(
-						aliases,
-						expression.Keys)
+					tmp, err = slices.Difference(aliases, expression.Keys)
 				} else {
-					tmp, err = slices.Union(
-						aliases,
-						expression.Keys)
+					tmp, err = slices.Union(aliases, expression.Keys)
 				}
 				if err != nil {
-					logrus.Fatal(err)
+					logrus.WithFields(logrus.Fields{
+						"error": err,
+					}).Fatal("Unexpected error!")
 				}
 				aliases = tmp.Interface().([]string)
 			}
@@ -52,7 +50,9 @@ func getPublicKeysForSecret(uri string) []*pgp.PublicKey {
 	}
 	tmp, err := slices.Union(aliases, config.GetKeepers())
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Fatal("Unexpected error!")
 	}
 	aliases = tmp.Interface().([]string)
 

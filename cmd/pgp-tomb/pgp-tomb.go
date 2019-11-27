@@ -1,11 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"syscall"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	bashCompletionFunc = `
+	bashCompletionFunction = `
 __pgp-tomb_complete_secret_uri() {
 	# See:
 	#   - https://superuser.com/questions/564716/bash-completion-for-filename-patterns-or-directories
@@ -59,14 +59,7 @@ __pgp-tomb_complete_secret_uri() {
 }
 
 __pgp-tomb_custom_func() {
-	case ${last_command} in
-		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_list | pgp-tomb_rebuild | pgp-tomb_set)
-			__pgp-tomb_complete_secret_uri
-			return
-			;;
-		*)
-			;;
-	esac
+	__pgp-tomb_complete_secret_uri
 }
 `
 )
@@ -80,7 +73,7 @@ var (
 	rootCmd  = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                version,
-		BashCompletionFunction: bashCompletionFunc,
+		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
 		},
@@ -260,6 +253,7 @@ func main() {
 	var cmdListKey string
 	cmdList := &cobra.Command{
 		Use:     "list [folder]",
+		Short:   "List secrets",
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
@@ -304,6 +298,9 @@ func main() {
 			// Skip initConfig().
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			// XXX: custom completion function for secret URIs not yet available
+			// for Zsh. See:
+			//   - https://github.com/spf13/cobra/pull/884
 			rootCmd.GenZshCompletion(os.Stdout)
 		},
 	}
