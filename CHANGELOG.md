@@ -1,4 +1,5 @@
 - v0.0.8 (?):
+    + Always use secret URI completion as fallback in Bash completion.
     + ...
 
 - v0.0.7 (2019-11-28):

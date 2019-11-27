@@ -59,14 +59,7 @@ __pgp-tomb_complete_secret_uri() {
 }
 
 __pgp-tomb_custom_func() {
-	case ${last_command} in
-		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_list | pgp-tomb_rebuild | pgp-tomb_set)
-			__pgp-tomb_complete_secret_uri
-			return
-			;;
-		*)
-			;;
-	esac
+	__pgp-tomb_complete_secret_uri
 }
 `
 )
