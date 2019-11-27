@@ -260,6 +260,7 @@ func main() {
 	var cmdListKey string
 	cmdList := &cobra.Command{
 		Use:     "list [folder]",
+		Short:   "List secrets",
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
