@@ -126,7 +126,7 @@ func initPublicKeysConfig() {
 		}).Fatal("Failed to load public keys!")
 	}
 
-	res, err := maps.StringKeysSlice(keys)
+	res, err := maps.KeysSlice(keys)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func initTeamsConfig() {
 		}
 	}
 
-	res, err := maps.StringKeysSlice(teams)
+	res, err := maps.KeysSlice(teams)
 	if err != nil {
 		logrus.Fatal(err)
 	}

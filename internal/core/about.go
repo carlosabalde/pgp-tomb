@@ -75,11 +75,12 @@ func About(uri string) {
 	}
 
 	// Render rubbish recipients?
-	res, err := slices.Difference(currentAliases, expectedAliases)
-	if err != nil {
-		logrus.Fatal(err)
+	tmpCurrentAliases, errCurrentAliases := slices.Difference(
+		currentAliases, expectedAliases)
+	if errCurrentAliases != nil {
+		logrus.Fatal(errCurrentAliases)
 	}
-	rubbishRecipients := res.Interface().([]string)
+	rubbishRecipients := tmpCurrentAliases.Interface().([]string)
 	if len(rubbishRecipients) > 0 {
 		sort.Strings(rubbishRecipients)
 		fmt.Printf(
@@ -88,11 +89,12 @@ func About(uri string) {
 	}
 
 	// Render missing recipients?
-	res, err = slices.Difference(expectedAliases, currentAliases)
-	if err != nil {
-		logrus.Fatal(err)
+	tmpExpectedAliases, errExpectedAliases := slices.Difference(
+		expectedAliases, currentAliases)
+	if errExpectedAliases != nil {
+		logrus.Fatal(errExpectedAliases)
 	}
-	missingRecipients := res.Interface().([]string)
+	missingRecipients := tmpExpectedAliases.Interface().([]string)
 	if len(missingRecipients) > 0 {
 		sort.Strings(missingRecipients)
 		fmt.Printf(

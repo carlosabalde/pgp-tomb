@@ -144,7 +144,7 @@ func checkSecret(uri, path string, dryRun bool) {
 		}
 	}
 	if !reEncrypt && len(expectedKeysByAlias) > 0 {
-		res, err := maps.StringKeysSlice(expectedKeysByAlias)
+		res, err := maps.KeysSlice(expectedKeysByAlias)
 		if err != nil {
 			logrus.Fatal(err)
 		}

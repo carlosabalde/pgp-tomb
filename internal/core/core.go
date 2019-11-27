@@ -32,29 +32,29 @@ func getPublicKeysForSecret(uri string) []*pgp.PublicKey {
 	for _, permission := range permissions {
 		if permission.Regexp.Match([]byte(uri)) {
 			for _, expression := range permission.Expressions {
-				var res reflect.Value
+				var tmp reflect.Value
 				var err error
 				if expression.Deny {
-					res, err = slices.Difference(
+					tmp, err = slices.Difference(
 						aliases,
 						expression.Keys)
 				} else {
-					res, err = slices.Union(
+					tmp, err = slices.Union(
 						aliases,
 						expression.Keys)
 				}
 				if err != nil {
 					logrus.Fatal(err)
 				}
-				aliases = res.Interface().([]string)
+				aliases = tmp.Interface().([]string)
 			}
 		}
 	}
-	res, err := slices.Union(aliases, config.GetKeepers())
+	tmp, err := slices.Union(aliases, config.GetKeepers())
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	aliases = res.Interface().([]string)
+	aliases = tmp.Interface().([]string)
 
 	// Expand key aliases to full 'pgp.PublicKey' instances.
 	keys := config.GetPublicKeys()
