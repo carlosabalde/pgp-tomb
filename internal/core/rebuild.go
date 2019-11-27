@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -16,32 +17,41 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(limit string, dryRun bool) {
+func Rebuild(folder, grep string, dryRun bool) {
 	// Initializations.
 	checked := 0
-	var limitRegexp *regexp.Regexp
-	if limit != "" {
+	var grepRegexp *regexp.Regexp
+	if grep != "" {
 		var err error
-		limitRegexp, err = regexp.Compile(limit)
+		grepRegexp, err = regexp.Compile(grep)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"regexp": limit,
+				"regexp": grep,
 				"error":  err,
 			}).Fatal("Failed to compile limit regexp!")
 		}
 	} else {
-		limitRegexp = nil
+		grepRegexp = nil
+	}
+
+	// Check folder.
+	root := path.Join(config.GetSecretsRoot(), folder)
+	if folder != "" {
+		if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
+			fmt.Fprintln(os.Stderr, "Folder does not exist!")
+			os.Exit(1)
+		}
 	}
 
 	// Walk file system.
 	if err := filepath.Walk(
-		config.GetSecretsRoot(),
+		root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 			if !info.IsDir() {
-				if checkFile(path, info, limitRegexp, dryRun) {
+				if checkFile(path, info, grepRegexp, dryRun) {
 					checked++
 				}
 			}
@@ -56,7 +66,7 @@ func Rebuild(limit string, dryRun bool) {
 	fmt.Printf("Done! %d files checked.\n", checked)
 }
 
-func checkFile(path string, info os.FileInfo, limit *regexp.Regexp, dryRun bool) bool {
+func checkFile(path string, info os.FileInfo, grep *regexp.Regexp, dryRun bool) bool {
 	var checker func()
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
@@ -72,7 +82,7 @@ func checkFile(path string, info os.FileInfo, limit *regexp.Regexp, dryRun bool)
 		}
 	}
 
-	if limit == nil || limit.Match([]byte(uri)) {
+	if grep == nil || grep.Match([]byte(uri)) {
 		checker()
 		return true
 	}

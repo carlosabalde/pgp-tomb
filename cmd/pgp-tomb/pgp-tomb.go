@@ -60,7 +60,7 @@ __pgp-tomb_complete_secret_uri() {
 
 __pgp-tomb_custom_func() {
 	case ${last_command} in
-		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_set)
+		pgp-tomb_about | pgp-tomb_edit | pgp-tomb_get | pgp-tomb_list | pgp-tomb_rebuild | pgp-tomb_set)
 			__pgp-tomb_complete_secret_uri
 			return
 			;;
@@ -155,9 +155,9 @@ func main() {
 	var cmdGetFile string
 	var cmdGetCopy bool
 	cmdGet := &cobra.Command{
-		Use:     "get",
-		Aliases: []string{"cat"},
-		Short:   "Read secret",
+		Use:     "get <secret URI>",
+		Aliases: []string{"cat", "show"},
+		Short:   "Show secret (defaults to stdout)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -181,9 +181,9 @@ func main() {
 	// 'set' command.
 	var cmdSetFile string
 	cmdSet := &cobra.Command{
-		Use:     "set",
-		Aliases: []string{"add"},
-		Short:   "Create / update secret",
+		Use:     "set <secret URI>",
+		Aliases: []string{"add", "insert"},
+		Short:   "Create / update secret (defaults to stdin)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -200,8 +200,8 @@ func main() {
 
 	// 'edit' command.
 	cmdEdit := &cobra.Command{
-		Use:   "edit",
-		Short: "Edit secret",
+		Use:   "edit <secret URI>",
+		Short: "Edit secret using your preferred editor (defaults to $EDITOR)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
@@ -215,7 +215,7 @@ func main() {
 
 	// 'about' command.
 	cmdAbout := &cobra.Command{
-		Use:   "about",
+		Use:   "about <secret URI>",
 		Short: "Show details about secret",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
@@ -229,37 +229,54 @@ func main() {
 	}
 
 	// 'rebuild' command.
-	var cmdRebuildLimit string
+	var cmdRebuildGrep string
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
-		Use:   "rebuild",
+		Use:   "rebuild [folder]",
 		Short: "Rebuild / check secrets",
-		Args:  cobra.NoArgs,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("rebuilding multiple folders is not supported")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Rebuild(cmdRebuildLimit, cmdRebuildDryRun)
+			var folder string = ""
+			if len(args) > 0 {
+				folder = args[0]
+			}
+			core.Rebuild(folder, cmdRebuildGrep, cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
-		&cmdRebuildLimit, "limit", "",
+		&cmdRebuildGrep, "grep", "",
 		"limit rebuild to secrets with URIs matching this regexp")
 	cmdRebuild.PersistentFlags().BoolVar(
 		&cmdRebuildDryRun, "dry-run", false,
 		"run the rebuild without actually executing any side effect")
 
 	// 'list' command.
-	var cmdListLimit string
+	var cmdListGrep string
 	var cmdListKey string
 	cmdList := &cobra.Command{
-		Use:     "list",
+		Use:     "list [folder]",
 		Aliases: []string{"ls", "dir"},
-		Short:   "List secrets",
-		Args:    cobra.NoArgs,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("listing multiple folders is not supported")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.List(cmdListLimit, cmdListKey)
+			var folder string = ""
+			if len(args) > 0 {
+				folder = args[0]
+			}
+			core.List(folder, cmdListGrep, cmdListKey)
 		},
 	}
 	cmdList.PersistentFlags().StringVar(
-		&cmdListLimit, "limit", "",
+		&cmdListGrep, "grep", "",
 		"limit listing to secrets with URIs matching this regexp")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListKey, "key", "",

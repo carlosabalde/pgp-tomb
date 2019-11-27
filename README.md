@@ -24,7 +24,7 @@ SETUP
    `-- secrets/   
    ```
 
-3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching the URI of the secret (e.g. `foo/answers.md`) against each regexp in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and the the pattern matching continues. Obviously order is relevant both for regexps and for expressions associated to each regexp. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
+3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching the URI of the secret (e.g. `foo/answers.md`) against each regexp in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for regexps and for expressions associated to each regexp. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
    ```
    root: /home/carlos/pgp-tomb
 
@@ -51,6 +51,14 @@ SETUP
    ```
    ...
    source /etc/bash_completion
+   source <(pgp-tomb bash)
+   export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
+   ```
+
+   Same thing in MacOS requires some extra steps: (1) install a modern Bash and the completion extension (e.g. `port install bash bash-completion`); (2) add `/opt/local/bin/bash` to the list of allowed shells in `/etc/shells`; and (3) change your default shell (i.e. `chsh -s /opt/local/bin/bash`).
+   ```
+   ...
+   source /opt/local/etc/profile.d/bash_completion.sh
    source <(pgp-tomb bash)
    export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
    ```
