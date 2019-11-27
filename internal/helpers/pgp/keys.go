@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -17,18 +18,18 @@ type PublicKey struct {
 func LoadASCIIArmoredPublicKey(alias string, input io.Reader) (*PublicKey, error) {
 	block, err := armor.Decode(input)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to decode ASCII armor of key '%s': %s", alias, err)
+		return nil, errors.Wrapf(err, "failed to decode ASCII armor of key '%s'", alias)
 	}
 
 	if block.Type != openpgp.PublicKeyType {
-		return nil, fmt.Errorf("Invalid public key '%s'", alias)
+		return nil, fmt.Errorf("invalid public key '%s'", alias)
 	}
 
 	reader := packet.NewReader(block.Body)
 
 	entity, err := openpgp.ReadEntity(reader)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create entity from public key '%s': %s", alias, err)
+		return nil, errors.Wrapf(err, "failed to create entity from public key '%s'", alias)
 	}
 
 	return &PublicKey{alias, entity}, nil

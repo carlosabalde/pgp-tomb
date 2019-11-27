@@ -3,6 +3,7 @@ package pgp
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 )
 
@@ -14,10 +15,13 @@ func Encrypt(input io.Reader, output io.Writer, keys []*PublicKey) error {
 
 	plain, err := openpgp.Encrypt(output, entities, nil, nil, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "PGP encryption failed")
 	}
 	defer plain.Close()
-	io.Copy(plain, input)
+
+	if _, err := io.Copy(plain, input); err != nil {
+		return errors.Wrap(err, "PGP encryption failed")
+	}
 
 	return nil
 }
