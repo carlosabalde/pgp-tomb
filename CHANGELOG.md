@@ -1,4 +1,6 @@
 - v0.0.9 (?):
+    + Add --force & --workers flags to 'rebuild' command.
+    + ...
 
 - v0.0.8 (2019-11-28):
     + Always use secret URI completion as fallback in Bash completion.

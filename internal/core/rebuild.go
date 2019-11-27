@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 
@@ -17,9 +18,11 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(folder, grep string, dryRun bool) {
-	// Initializations.
+func Rebuild(folder, grep string, workers int, force, dryRun bool) {
+	// Initialize counter.
 	checked := 0
+
+	// Initialize grep.
 	var grepRegexp *regexp.Regexp
 	if grep != "" {
 		var err error
@@ -43,6 +46,14 @@ func Rebuild(folder, grep string, dryRun bool) {
 		}
 	}
 
+	// Launch workers.
+	var waitGroup sync.WaitGroup
+	tasksChannel := make(chan func() string, 32)
+	for i := 0; i < workers; i++ {
+		waitGroup.Add(1)
+		go taskDispatcher(tasksChannel, &waitGroup)
+	}
+
 	// Walk file system.
 	if err := filepath.Walk(
 		root,
@@ -51,7 +62,7 @@ func Rebuild(folder, grep string, dryRun bool) {
 				return err
 			}
 			if !info.IsDir() {
-				if checkFile(path, info, grepRegexp, dryRun) {
+				if checkFile(path, info, tasksChannel, grepRegexp, force, dryRun) {
 					checked++
 				}
 			}
@@ -62,63 +73,77 @@ func Rebuild(folder, grep string, dryRun bool) {
 		}).Fatal("Failed to rebuild secrets!")
 	}
 
+	// Wait for completion.
+	close(tasksChannel)
+	waitGroup.Wait()
+
 	// Done!
 	fmt.Printf("Done! %d files checked.\n", checked)
 }
 
-func checkFile(path string, info os.FileInfo, grep *regexp.Regexp, dryRun bool) bool {
-	var checker func()
+func checkFile(
+	path string, info os.FileInfo, tasksChannel chan func() string,
+	grep *regexp.Regexp, force, dryRun bool) bool {
+	var task func() string
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 
 	if filepath.Ext(path) == config.SecretExtension {
 		uri = strings.TrimSuffix(uri, config.SecretExtension)
-		checker = func() {
-			checkSecret(uri, path, dryRun)
+		task = func() string {
+			return checkSecret(uri, path, force, dryRun)
 		}
 	} else {
-		checker = func() {
-			checkUnexpectFile(path, dryRun)
+		task = func() string {
+			return checkUnexpectFile(path, dryRun)
 		}
 	}
 
 	if grep == nil || grep.Match([]byte(uri)) {
-		checker()
+		tasksChannel <- task
 		return true
 	}
 
 	return false
 }
 
-func checkSecret(uri, path string, dryRun bool) {
+func taskDispatcher(tasksChannel <-chan func() string, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done()
+	for task := range tasksChannel {
+		message := task()
+		if message != "" {
+			fmt.Println(message)
+		}
+	}
+}
+
+func checkSecret(uri, path string, force, dryRun bool) string {
 	// Initialize input reader.
 	input, err := os.Open(path)
 	if err != nil {
-		fmt.Printf("! Failed to open file '%s'", path)
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"path":  path,
 		}).Error("Failed to open file!")
-		return
+		return fmt.Sprintf("! Failed to open file '%s'", path)
 	}
 	defer input.Close()
 
 	// Parse secret.
 	currentRecipientKeyIds, err := pgp.GetRecipientKeyIdsForEncryptedMessage(input)
 	if err != nil {
-		fmt.Printf("! Failed to determine recipients for '%s'", uri)
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"uri":   uri,
 		}).Error("Failed to determine recipients!")
-		return
+		return fmt.Sprintf("! Failed to determine recipients for '%s'", uri)
 	}
 
 	// Determine expected recipients.
 	expectedKeys := getPublicKeysForSecret(uri)
 
 	// Check current recipients.
-	reEncrypt := false
+	result := ""
 	expectedKeysByAlias := make(map[string]*pgp.PublicKey)
 	for _, key := range expectedKeys {
 		expectedKeysByAlias[key.Alias] = key
@@ -127,46 +152,53 @@ func checkSecret(uri, path string, dryRun bool) {
 		key := findPublicKeyByKeyId(keyId)
 		if key != nil {
 			if _, found := expectedKeysByAlias[key.Alias]; !found {
-				fmt.Printf(
+				result = fmt.Sprintf(
 					"- Re-encrypting '%s': rubbish recipients (%s, etc.)...",
 					uri, key.Alias)
-				reEncrypt = true
 				break
 			} else {
 				delete(expectedKeysByAlias, key.Alias)
 			}
 		} else {
-			fmt.Printf(
+			result = fmt.Sprintf(
 				"- Re-encrypting '%s': unknown rubbish recipients (0x%x, etc.)...",
 				uri, keyId)
-			reEncrypt = true
 			break
 		}
 	}
-	if !reEncrypt && len(expectedKeysByAlias) > 0 {
+	if result == "" && len(expectedKeysByAlias) > 0 {
 		res, err := maps.KeysSlice(expectedKeysByAlias)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 		keysAliases := res.Interface().([]string)
 		sort.Strings(keysAliases)
-		fmt.Printf(
+		result = fmt.Sprintf(
 			"- Re-encrypting '%s': missing recipients (%s)...",
 			uri, strings.Join(keysAliases, ", "))
-		reEncrypt = true
+	}
+	if result == "" && force {
+		result = fmt.Sprintf("- Re-encrypting '%s': forced...", uri)
 	}
 
 	// Re-encrypt?
-	if reEncrypt {
+	if result != "" {
 		if !dryRun {
-			reEncryptSecret(path, expectedKeys)
+			if reEncryptSecret(path, expectedKeys) {
+				result += " ✓"
+			} else {
+				result += " ✗"
+			}
 		} else {
-			success()
+			result += " ✓"
 		}
 	}
+
+	// Done!
+	return result
 }
 
-func reEncryptSecret(path string, keys []*pgp.PublicKey) {
+func reEncryptSecret(path string, keys []*pgp.PublicKey) bool {
 	// Initialize input reader.
 	input, err := os.Open(path)
 	if err != nil {
@@ -182,62 +214,53 @@ func reEncryptSecret(path string, keys []*pgp.PublicKey) {
 
 	// Decrypt secret.
 	if err := pgp.DecryptWithGPG(config.GetGPG(), input, buffer); err != nil {
-		failure()
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"path":  path,
 		}).Error("Failed to decrypt file for re-encryption! Are you allowed to access it?")
-		return
+		return false
 	}
 
 	// Initialize output writer.
 	output, err := os.Create(path)
 	if err != nil {
-		failure()
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"path":  path,
 		}).Error("Failed to open file for re-encryption!")
-		return
+		return false
 	}
 	defer output.Close()
 
 	// Encrypt secret.
 	if err := pgp.Encrypt(buffer, output, keys); err != nil {
-		failure()
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"path":  path,
 		}).Error("Failed to re-encrypt file!")
-		return
+		return false
 	}
 
 	// Done!
-	success()
+	return true
 }
 
-func checkUnexpectFile(path string, dryRun bool) {
-	fmt.Printf("- Removing unexpected file '%s'...", path)
+func checkUnexpectFile(path string, dryRun bool) string {
+	result := fmt.Sprintf("- Removing unexpected file '%s'...", path)
 
 	if !dryRun {
 		if err := os.Remove(path); err != nil {
-			failure()
 			logrus.WithFields(logrus.Fields{
 				"error": err,
 				"path":  path,
 			}).Error("Failed to remove unexpected file!")
+			result += " ✗"
 		} else {
-			success()
+			result += " ✓"
 		}
 	} else {
-		success()
+		result += " ✓"
 	}
-}
 
-func success() {
-	fmt.Println(" ✓")
-}
-
-func failure() {
-	fmt.Println(" ✗")
+	return result
 }
