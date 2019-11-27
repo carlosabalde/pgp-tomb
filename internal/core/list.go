@@ -13,20 +13,20 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func List(limit, keyAlias string) {
-	// Initialize limit.
-	var limitRegexp *regexp.Regexp
-	if limit != "" {
+func List(grep, keyAlias string) {
+	// Initialize grep.
+	var grepRegexp *regexp.Regexp
+	if grep != "" {
 		var err error
-		limitRegexp, err = regexp.Compile(limit)
+		grepRegexp, err = regexp.Compile(grep)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"regexp": limit,
+				"regexp": grep,
 				"error":  err,
-			}).Fatal("Failed to compile limit regexp!")
+			}).Fatal("Failed to compile grep regexp!")
 		}
 	} else {
-		limitRegexp = nil
+		grepRegexp = nil
 	}
 
 	// Initialize key.
@@ -49,7 +49,7 @@ func List(limit, keyAlias string) {
 				return err
 			}
 			if !info.IsDir() && filepath.Ext(path) == config.SecretExtension {
-				listSecret(path, limitRegexp, key)
+				listSecret(path, grepRegexp, key)
 			}
 			return nil
 		}); err != nil {
@@ -59,12 +59,12 @@ func List(limit, keyAlias string) {
 	}
 }
 
-func listSecret(path string, limit *regexp.Regexp, key *pgp.PublicKey) {
+func listSecret(path string, grep *regexp.Regexp, key *pgp.PublicKey) {
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 	uri = strings.TrimSuffix(uri, config.SecretExtension)
 
-	if limit != nil && !limit.Match([]byte(uri)) {
+	if grep != nil && !grep.Match([]byte(uri)) {
 		return
 	}
 

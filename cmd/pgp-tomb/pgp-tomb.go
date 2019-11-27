@@ -182,7 +182,7 @@ func main() {
 	var cmdSetFile string
 	cmdSet := &cobra.Command{
 		Use:     "set",
-		Aliases: []string{"add"},
+		Aliases: []string{"add", "insert"},
 		Short:   "Create / update secret",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
@@ -229,25 +229,25 @@ func main() {
 	}
 
 	// 'rebuild' command.
-	var cmdRebuildLimit string
+	var cmdRebuildGrep string
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
 		Use:   "rebuild",
 		Short: "Rebuild / check secrets",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Rebuild(cmdRebuildLimit, cmdRebuildDryRun)
+			core.Rebuild(cmdRebuildGrep, cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
-		&cmdRebuildLimit, "limit", "",
+		&cmdRebuildGrep, "grep", "",
 		"limit rebuild to secrets with URIs matching this regexp")
 	cmdRebuild.PersistentFlags().BoolVar(
 		&cmdRebuildDryRun, "dry-run", false,
 		"run the rebuild without actually executing any side effect")
 
 	// 'list' command.
-	var cmdListLimit string
+	var cmdListGrep string
 	var cmdListKey string
 	cmdList := &cobra.Command{
 		Use:     "list",
@@ -255,11 +255,11 @@ func main() {
 		Short:   "List secrets",
 		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.List(cmdListLimit, cmdListKey)
+			core.List(cmdListGrep, cmdListKey)
 		},
 	}
 	cmdList.PersistentFlags().StringVar(
-		&cmdListLimit, "limit", "",
+		&cmdListGrep, "grep", "",
 		"limit listing to secrets with URIs matching this regexp")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListKey, "key", "",
