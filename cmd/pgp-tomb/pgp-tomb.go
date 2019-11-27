@@ -223,6 +223,8 @@ func main() {
 
 	// 'rebuild' command.
 	var cmdRebuildGrep string
+	var cmdRebuildWorkers int
+	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
 		Use:   "rebuild [folder]",
@@ -231,6 +233,9 @@ func main() {
 			if len(args) > 1 {
 				return errors.New("rebuilding multiple folders is not supported")
 			}
+			if cmdRebuildWorkers < 1 {
+				return errors.New("at least one worker is needed")
+			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -238,15 +243,23 @@ func main() {
 			if len(args) > 0 {
 				folder = args[0]
 			}
-			core.Rebuild(folder, cmdRebuildGrep, cmdRebuildDryRun)
+			core.Rebuild(
+				folder, cmdRebuildGrep, cmdRebuildWorkers, cmdRebuildForce,
+				cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
 		&cmdRebuildGrep, "grep", "",
 		"limit rebuild to secrets with URIs matching this regexp")
+	cmdRebuild.PersistentFlags().IntVar(
+		&cmdRebuildWorkers, "workers", 4,
+		"set preferred number of workers")
+	cmdRebuild.PersistentFlags().BoolVar(
+		&cmdRebuildForce, "force", false,
+		"force rebuild even when not needed")
 	cmdRebuild.PersistentFlags().BoolVar(
 		&cmdRebuildDryRun, "dry-run", false,
-		"run the rebuild without actually executing any side effect")
+		"run without actually executing any side effect")
 
 	// 'list' command.
 	var cmdListGrep string
