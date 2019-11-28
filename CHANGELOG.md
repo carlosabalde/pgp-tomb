@@ -1,6 +1,8 @@
-- v0.1.1 (?):
-    + Fix encryption of binary contents.
+- v0.1.2 (?):
     + ...
+
+- v0.1.1 (2019-11-29):
+    + Fix encryption of binary contents.
 
 - v0.1.0 (2019-11-28):
     + Add --force & --workers flags to 'rebuild' command.
