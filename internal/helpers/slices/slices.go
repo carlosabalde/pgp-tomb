@@ -43,8 +43,8 @@ func Difference(arr1, arr2 interface{}) (reflect.Value, error) {
 		return reflect.Value{}, errors.New("incompatible types")
 	}
 
-	// Put values of the first slice as keys into a map and
-	// then remove values of the second slice.
+	// Put values of the first slice as keys into a map and then remove values
+	// of the second slice.
 	items := make(map[interface{}]bool)
 	slice1 := reflect.ValueOf(arr1)
 	for i, n := 0, slice1.Len(); i < n; i++ {
