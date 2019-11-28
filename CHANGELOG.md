@@ -1,4 +1,5 @@
 - v0.1.1 (?):
+    + Fix encryption of binary contents.
     + ...
 
 - v0.1.0 (2019-11-28):
