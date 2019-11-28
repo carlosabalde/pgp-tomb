@@ -13,7 +13,8 @@ func Encrypt(input io.Reader, output io.Writer, keys []*PublicKey) error {
 		entities = append(entities, key.Entity)
 	}
 
-	plain, err := openpgp.Encrypt(output, entities, nil, nil, nil)
+	hints := openpgp.FileHints{IsBinary: true}
+	plain, err := openpgp.Encrypt(output, entities, nil, &hints, nil)
 	if err != nil {
 		return errors.Wrap(err, "PGP encryption failed")
 	}
