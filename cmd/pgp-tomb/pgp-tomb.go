@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/carlosabalde/pgp-tomb/internal/core"
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
 const (
@@ -121,6 +123,18 @@ func initConfig() {
 	config.Init()
 }
 
+func parseTags(tags []string) []secret.Tag {
+	result := make([]secret.Tag, 0)
+	for _, tag := range tags {
+		items := strings.Split(tag, ":")
+		result = append(result, secret.Tag{
+			Name: strings.TrimSpace(items[0]),
+			Value: strings.TrimSpace(items[1]),
+		})
+	}
+	return result
+}
+
 func main() {
 	// Initializations.
 	syscall.Umask(0077)
@@ -171,6 +185,7 @@ func main() {
 
 	// 'set' command.
 	var cmdSetFile string
+	var cmdSetTags []string
 	cmdSet := &cobra.Command{
 		Use:     "set <secret URI>",
 		Aliases: []string{"add", "insert"},
@@ -179,17 +194,27 @@ func main() {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
 			}
+			for _, tag := range cmdSetTags {
+				if !strings.Contains(tag, ":") {
+					return errors.New("expected tag format is 'name: value'")
+				}
+			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Set(args[0], cmdSetFile)
+			core.Set(args[0], cmdSetFile, parseTags(cmdSetTags))
 		},
 	}
 	cmdSet.PersistentFlags().StringVarP(
 		&cmdSetFile, "file", "f", "",
 		"read secret from file")
+	cmdSet.PersistentFlags().StringArrayVar(
+		&cmdSetTags, "tag", nil,
+		"tag secret using this 'name: value' pair")
 
 	// 'edit' command.
+	var cmdEditDropTags bool
+	var cmdEditTags []string
 	cmdEdit := &cobra.Command{
 		Use:   "edit <secret URI>",
 		Short: "Edit secret using your preferred editor (defaults to $EDITOR)",
@@ -197,12 +222,24 @@ func main() {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
 			}
+			for _, tag := range cmdSetTags {
+				if !strings.Contains(tag, ":") {
+					return errors.New("expected tag format is 'name: value'")
+				}
+			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Edit(args[0])
+			tags := parseTags(cmdEditTags)
+			core.Edit(args[0], cmdEditDropTags || len(tags) > 0, tags)
 		},
 	}
+	cmdEdit.PersistentFlags().BoolVar(
+		&cmdEditDropTags, "drop-tags", false,
+		"drop existing tags")
+	cmdEdit.PersistentFlags().StringArrayVar(
+		&cmdEditTags, "tag", nil,
+		"tag secret using this 'name: value' pair")
 
 	// 'about' command.
 	cmdAbout := &cobra.Command{

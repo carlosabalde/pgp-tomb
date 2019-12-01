@@ -10,9 +10,10 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
-func Set(uri, inputPath string) {
+func Set(uri, inputPath string, tags []secret.Tag) {
 	// Initializations.
 	s := secret.New(uri)
+	s.SetTags(tags)
 
 	// Initialize input reader.
 	var input io.Reader

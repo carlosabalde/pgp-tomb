@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"os"
+	"sort"
 
 	"github.com/pkg/errors"
 )
@@ -42,11 +43,15 @@ func (secret *Secret) NewReader() (*Reader, error) {
 		return nil, errors.Wrap(err, "failed to gunzip secret")
 	}
 
-	if err := json.Unmarshal(gzipReader.Extra, &secret.headers); err != nil {
+	if err := json.Unmarshal(gzipReader.Extra, &secret.tags); err != nil {
 		gzipReader.Close()
 		fileReader.Close()
-		return nil, errors.Wrap(err, "failed to unserialize headers")
+		return nil, errors.Wrap(err, "failed to unserialize tags")
 	}
+
+	sort.Slice(secret.tags, func(i, j int) bool {
+		return secret.tags[i].Name < secret.tags[j].Name
+	})
 
 	return &Reader{
 		file: fileReader,
