@@ -15,11 +15,11 @@ import (
 
 type Secret struct {
 	uri     string
-	headers []Header
+	tags []Tag
 	path    string
 }
 
-type Header struct {
+type Tag struct {
 	Name  string
 	Value string
 }
@@ -27,7 +27,7 @@ type Header struct {
 func New(uri string) *Secret {
 	return &Secret{
 		uri:     uri,
-		headers: make([]Header, 0),
+		tags: make([]Tag, 0),
 		path:    path.Join(config.GetSecretsRoot(), uri+config.SecretExtension),
 	}
 }
