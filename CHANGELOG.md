@@ -1,5 +1,8 @@
-- v0.2.1 (?):
+- v0.2.2 (?):
     + ...
+
+- v0.2.1 (2019-12-01):
+    + Add support for tags.
 
 - v0.2.0 (2019-12-01):
     + Secrets stored as gzipped files including custom headers.
