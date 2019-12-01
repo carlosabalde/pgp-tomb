@@ -14,9 +14,9 @@ import (
 )
 
 type Secret struct {
-	uri     string
+	uri  string
 	tags []Tag
-	path    string
+	path string
 }
 
 type Tag struct {
@@ -26,9 +26,9 @@ type Tag struct {
 
 func New(uri string) *Secret {
 	return &Secret{
-		uri:     uri,
+		uri:  uri,
 		tags: make([]Tag, 0),
-		path:    path.Join(config.GetSecretsRoot(), uri+config.SecretExtension),
+		path: path.Join(config.GetSecretsRoot(), uri+config.SecretExtension),
 	}
 }
 

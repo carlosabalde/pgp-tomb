@@ -102,8 +102,8 @@ func About(uri string) {
 	}
 
 	// Render tags.
-	fmt.Println("- Tags:");
+	fmt.Println("- Tags:")
 	for _, tag := range s.GetTags() {
-		fmt.Printf("  + %s: %s\n", tag.Name, tag.Value);
+		fmt.Printf("  + %s: %s\n", tag.Name, tag.Value)
 	}
 }

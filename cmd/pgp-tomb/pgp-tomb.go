@@ -128,7 +128,7 @@ func parseTags(tags []string) []secret.Tag {
 	for _, tag := range tags {
 		items := strings.Split(tag, ":")
 		result = append(result, secret.Tag{
-			Name: strings.TrimSpace(items[0]),
+			Name:  strings.TrimSpace(items[0]),
 			Value: strings.TrimSpace(items[1]),
 		})
 	}
