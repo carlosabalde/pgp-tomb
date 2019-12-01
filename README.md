@@ -1,6 +1,6 @@
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
-- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted using one or more public keys (i.e. recipients).
+- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted & gzipped using one or more public keys (i.e. recipients).
 
 - A simple yet flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret can be easily restricted to one or more teams and / or individual users. It's up to you how to share the secrets across the organization: a git repository, a shared folder, etc.
 
@@ -14,7 +14,7 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.pgp` files will populate this folder once you start using the manager).
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
    |-- keys/
@@ -53,6 +53,7 @@ SETUP
    source /etc/bash_completion
    source <(pgp-tomb bash)
    export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
+   #alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT"
    ```
 
    Same thing in MacOS requires some extra steps: (1) install a modern Bash and the completion extension (e.g. `port install bash bash-completion`); (2) add `/opt/local/bin/bash` to the list of allowed shells in `/etc/shells`; and (3) change your default shell (i.e. `chsh -s /opt/local/bin/bash`).
@@ -61,6 +62,7 @@ SETUP
    source /opt/local/etc/profile.d/bash_completion.sh
    source <(pgp-tomb bash)
    export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
+   #alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT"
    ```
 
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.
@@ -113,43 +115,7 @@ Running `make docker` you can build & connect to a handy Docker container useful
 
 - Some encrypted test files can be found in `/mnt/files/secrets/`.
   ```
-  # gpg --use-agent -d < /mnt/files/secrets/foo/bar/lorem\ ipsum.txt.pgp
-  ```
-
-- Encrypted files in `/mnt/files/secrets/` match the permissions included in the sample configuration file at `/mnt/config/pgp-tomb.yaml`. They were generated using a temporary keyring as follows.
-  ```
-  # mkdir /tmp/gnupg/
-
-  # gpg --homedir /tmp/gnupg --import /mnt/files/keys/*.pub
-
-  # gpg --homedir /tmp/gnupg --yes --encrypt --compress-algo 1 \
-        --output /mnt/files/secrets/foo/Lenna.png.pgp \
-        --recipient alice@example.com \
-        --recipient bob@example.com \
-        --recipient frank@example.com \
-        /mnt/files/plain/Lenna.png
-
-  # gpg --homedir /tmp/gnupg --yes --encrypt --compress-algo 1 \
-        --output '/mnt/files/secrets/foo/bar/Mrs Dalloway.txt.pgp' \
-        --recipient alice@example.com \
-        --recipient bob@example.com \
-        --recipient frank@example.com \
-        '/mnt/files/plain/Mrs Dalloway.txt'
-
-  # gpg --homedir /tmp/gnupg --yes --encrypt --compress-algo 1 \
-        --output '/mnt/files/secrets/foo/bar/lorem ipsum.txt.pgp' \
-        --recipient alice@example.com \
-        --recipient bob@example.com \
-        --recipient chuck@example.com \
-        '/mnt/files/plain/lorem ipsum.txt'
-
-  # gpg --homedir /tmp/gnupg --yes --encrypt --compress-algo 1 \
-        --output /mnt/files/secrets/quz/answers.md.pgp \
-        --recipient alice@example.com \
-        --recipient bob@example.com \
-        /mnt/files/plain/answers.md
-
-  # rm -rf /tmp/gnupg/
+  # zcat /mnt/files/secrets/foo/bar/lorem\ ipsum.txt.secret | gpg --use-agent -d
   ```
 
 - PGP Tomb only support public keys using an ASCII armor. You can adapt existing keys using the following command:

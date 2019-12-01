@@ -9,27 +9,18 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/sirupsen/logrus"
 
-	"github.com/carlosabalde/pgp-tomb/internal/core/config"
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
 func Get(uri, outputPath string, copyToClipboard bool) {
+	// Initializations.
+	s := secret.New(uri)
+
 	// Check secret exists.
-	secretPath := findSecret(uri)
-	if secretPath == "" {
+	if !s.Exists() {
 		fmt.Fprintln(os.Stderr, "Secret does not exist!")
 		os.Exit(1)
 	}
-
-	// Initialize input reader.
-	input, err := os.Open(secretPath)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  secretPath,
-		}).Fatal("Failed to open secret file!")
-	}
-	defer input.Close()
 
 	// Initialize output writer.
 	var output io.Writer
@@ -52,7 +43,7 @@ func Get(uri, outputPath string, copyToClipboard bool) {
 	}
 
 	// Decrypt secret.
-	if err := pgp.DecryptWithGPG(config.GetGPG(), input, output); err != nil {
+	if err := s.Decrypt(output); err != nil {
 		fmt.Fprintln(
 			os.Stderr,
 			"Unable to decrypt secret! Are you allowed to access it?")

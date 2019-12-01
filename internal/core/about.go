@@ -8,35 +8,27 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/slices"
 )
 
 func About(uri string) {
+	// Initializations.
+	s := secret.New(uri)
+
 	// Check secret exists.
-	secretPath := findSecret(uri)
-	if secretPath == "" {
+	if !s.Exists() {
 		fmt.Fprintln(os.Stderr, "Secret does not exist!")
 		os.Exit(1)
 	}
 
-	// Initialize input reader.
-	input, err := os.Open(secretPath)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  secretPath,
-		}).Fatal("Failed to open input file!")
-	}
-	defer input.Close()
-
 	// Extract current recipients.
-	currentRecipientKeyIds, err := pgp.GetRecipientKeyIdsForEncryptedMessage(input)
+	currentRecipientKeyIds, err := s.GetCurrentRecipientsKeyIds()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"uri":   uri,
-		}).Error("Failed to determine recipients!")
+		}).Error("Failed to determine current recipients!")
 		return
 	}
 
@@ -56,8 +48,15 @@ func About(uri string) {
 
 	// Determine expected recipients.
 	expectedAliases := make([]string, 0)
-	for _, key := range getPublicKeysForSecret(uri) {
-		expectedAliases = append(expectedAliases, key.Alias)
+	if keys, err := s.GetExpectedPublicKeys(); err == nil {
+		for _, key := range keys {
+			expectedAliases = append(expectedAliases, key.Alias)
+		}
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+			"uri":   s.GetUri(),
+		}).Fatal("Failed to get expected public keys!")
 	}
 
 	// Render expected recipients.

@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
@@ -74,22 +75,31 @@ func listSecret(path string, grep *regexp.Regexp, key *pgp.PublicKey) {
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 	uri = strings.TrimSuffix(uri, config.SecretExtension)
 
-	if grep != nil && !grep.Match([]byte(uri)) {
+	s := secret.New(uri)
+
+	if grep != nil && !grep.Match([]byte(s.GetUri())) {
 		return
 	}
 
 	if key != nil {
 		found := false
-		for _, aKey := range getPublicKeysForSecret(uri) {
-			if aKey == key {
-				found = true
-				break
+		if keys, err := s.GetExpectedPublicKeys(); err == nil {
+			for _, aKey := range keys {
+				if aKey == key {
+					found = true
+					break
+				}
 			}
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+				"uri":   s.GetUri(),
+			}).Fatal("Failed to get expected public keys!")
 		}
 		if !found {
 			return
 		}
 	}
 
-	fmt.Printf("- %s\n", uri)
+	fmt.Printf("- %s\n", s.GetUri())
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/maps"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
@@ -91,7 +92,7 @@ func checkFile(
 	if filepath.Ext(path) == config.SecretExtension {
 		uri = strings.TrimSuffix(uri, config.SecretExtension)
 		task = func() string {
-			return checkSecret(uri, path, force, dryRun)
+			return checkSecret(secret.New(uri), force, dryRun)
 		}
 	} else {
 		task = func() string {
@@ -117,30 +118,26 @@ func taskDispatcher(tasksChannel <-chan func() string, waitGroup *sync.WaitGroup
 	}
 }
 
-func checkSecret(uri, path string, force, dryRun bool) string {
-	// Initialize input reader.
-	input, err := os.Open(path)
+func checkSecret(s *secret.Secret, force, dryRun bool) string {
+	// Extract current recipients.
+	currentRecipientKeyIds, err := s.GetCurrentRecipientsKeyIds()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"path":  path,
-		}).Error("Failed to open file!")
-		return fmt.Sprintf("! Failed to open file '%s'", path)
-	}
-	defer input.Close()
-
-	// Parse secret.
-	currentRecipientKeyIds, err := pgp.GetRecipientKeyIdsForEncryptedMessage(input)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"uri":   uri,
+			"uri":   s.GetUri(),
 		}).Error("Failed to determine recipients!")
-		return fmt.Sprintf("! Failed to determine recipients for '%s'", uri)
+		return fmt.Sprintf("! Failed to determine recipients for '%s'", s.GetUri())
 	}
 
 	// Determine expected recipients.
-	expectedKeys := getPublicKeysForSecret(uri)
+	expectedKeys, err := s.GetExpectedPublicKeys()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+			"uri":   s.GetUri(),
+		}).Error("Failed to determine expected public keys!")
+		return fmt.Sprintf("! Failed to determine expected public keys for '%s'", s.GetUri())
+	}
 
 	// Check current recipients.
 	result := ""
@@ -154,7 +151,7 @@ func checkSecret(uri, path string, force, dryRun bool) string {
 			if _, found := expectedKeysByAlias[key.Alias]; !found {
 				result = fmt.Sprintf(
 					"- Re-encrypting '%s': rubbish recipients (%s, etc.)...",
-					uri, key.Alias)
+					s.GetUri(), key.Alias)
 				break
 			} else {
 				delete(expectedKeysByAlias, key.Alias)
@@ -162,7 +159,7 @@ func checkSecret(uri, path string, force, dryRun bool) string {
 		} else {
 			result = fmt.Sprintf(
 				"- Re-encrypting '%s': unknown rubbish recipients (0x%x, etc.)...",
-				uri, keyId)
+				s.GetUri(), keyId)
 			break
 		}
 	}
@@ -175,16 +172,16 @@ func checkSecret(uri, path string, force, dryRun bool) string {
 		sort.Strings(keysAliases)
 		result = fmt.Sprintf(
 			"- Re-encrypting '%s': missing recipients (%s)...",
-			uri, strings.Join(keysAliases, ", "))
+			s.GetUri(), strings.Join(keysAliases, ", "))
 	}
 	if result == "" && force {
-		result = fmt.Sprintf("- Re-encrypting '%s': forced...", uri)
+		result = fmt.Sprintf("- Re-encrypting '%s': forced...", s.GetUri())
 	}
 
 	// Re-encrypt?
 	if result != "" {
 		if !dryRun {
-			if reEncryptSecret(path, expectedKeys) {
+			if reEncryptSecret(s) {
 				result += " ✓"
 			} else {
 				result += " ✗"
@@ -198,45 +195,24 @@ func checkSecret(uri, path string, force, dryRun bool) string {
 	return result
 }
 
-func reEncryptSecret(path string, keys []*pgp.PublicKey) bool {
-	// Initialize input reader.
-	input, err := os.Open(path)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  path,
-		}).Fatal("Failed to open secret file!")
-	}
-	defer input.Close()
-
+func reEncryptSecret(s *secret.Secret) bool {
 	// Initialize output buffer.
 	buffer := new(bytes.Buffer)
 
 	// Decrypt secret.
-	if err := pgp.DecryptWithGPG(config.GetGPG(), input, buffer); err != nil {
+	if err := s.Decrypt(buffer); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"path":  path,
+			"uri":   s.GetUri(),
 		}).Error("Failed to decrypt file for re-encryption! Are you allowed to access it?")
 		return false
 	}
 
-	// Initialize output writer.
-	output, err := os.Create(path)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  path,
-		}).Error("Failed to open file for re-encryption!")
-		return false
-	}
-	defer output.Close()
-
 	// Encrypt secret.
-	if err := pgp.Encrypt(buffer, output, keys); err != nil {
+	if err := s.Encrypt(buffer); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"path":  path,
+			"uri":   s.GetUri(),
 		}).Error("Failed to re-encrypt file!")
 		return false
 	}

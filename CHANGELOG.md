@@ -1,5 +1,8 @@
-- v0.1.2 (?):
+- v0.2.1 (?):
     + ...
+
+- v0.2.0 (2019-12-01):
+    + Secrets stored as gzipped files including custom headers.
 
 - v0.1.1 (2019-11-29):
     + Fix encryption of binary contents.

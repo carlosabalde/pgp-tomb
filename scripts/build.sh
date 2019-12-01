@@ -11,7 +11,10 @@ if [ ! -z "$1" ]; then
     ACTION="$1"
 fi
 
-export LD_FLAGS="-X main.version=$VERSION -X main.revision=$(git rev-parse --short HEAD) -s -w"
+export LD_FLAGS="\
+    -X github.com/carlosabalde/pgp-tomb/internal/core/config.version=$VERSION \
+    -X github.com/carlosabalde/pgp-tomb/internal/core/config.revision=$(git rev-parse --short HEAD) \
+    -s -w"
 
 # Instruct to build statically linked binaries.
 export CGO_ENABLED=0

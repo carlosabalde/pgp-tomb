@@ -11,10 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
 func Edit(uri string) {
+	// Initializations.
+	s := secret.New(uri)
+
 	// Initialize output writer.
 	output, err := ioutil.TempFile("", "pgp-tomb-")
 	if err != nil {
@@ -25,28 +28,14 @@ func Edit(uri string) {
 	defer os.Remove(output.Name())
 
 	// Check secret exists.
-	secretPath := findSecret(uri)
-	if secretPath != "" {
-		// Initialize input reader.
-		input, err := os.Open(secretPath)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"error": err,
-				"path":  secretPath,
-			}).Fatal("Failed to open secret file!")
-		}
-		defer input.Close()
-
-		// Decrypt secret.
-		if err := pgp.DecryptWithGPG(config.GetGPG(), input, output); err != nil {
+	if s.Exists() {
+		if err := s.Decrypt(output); err != nil {
 			fmt.Fprintln(
 				os.Stderr,
 				"Unable to decrypt secret! Are you allowed to access it?")
 			os.Exit(1)
 		}
 		output.Close()
-	} else {
-		secretPath = getPathForSecret(uri)
 	}
 
 	// Compute initial digest.

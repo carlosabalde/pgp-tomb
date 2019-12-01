@@ -36,21 +36,21 @@ __pgp-tomb_complete_secret_uri() {
 	fi
 
 	if [ ! -z "$secrets" ]; then
-		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.pgp' -- "$cur"))
+		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.secret' -- "$cur"))
 
 		if [ "${#COMPREPLY[@]}" == "1" ]; then
 			if [ -d "$secrets/$COMPREPLY" ]; then
 				LASTCHAR=/
 				COMPREPLY=$(printf %q%s "$COMPREPLY" "$LASTCHAR")
 			elif [ -f "$secrets/$COMPREPLY" ]; then
-				COMPREPLY=$(printf %q "${COMPREPLY%.pgp}")
+				COMPREPLY=$(printf %q "${COMPREPLY%.secret}")
 			fi
 		else
 			for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
 				[ -d "$secrets/${COMPREPLY[$i]}" ] && \
 					COMPREPLY[$i]=${COMPREPLY[$i]}/
 				[ -f "$secrets/${COMPREPLY[$i]}" ] && \
-					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.pgp}")
+					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.secret}")
 			done
 		fi
 	else
@@ -65,14 +65,12 @@ __pgp-tomb_custom_func() {
 )
 
 var (
-	version  string
-	revision string
-	cfgFile  string
-	verbose  bool
-	root     string
-	rootCmd  = &cobra.Command{
+	cfgFile string
+	verbose bool
+	root    string
+	rootCmd = &cobra.Command{
 		Use:                    "pgp-tomb",
-		Version:                version,
+		Version:                config.GetVersion(),
 		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
@@ -130,7 +128,7 @@ func main() {
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
 		"PGP Tomb version {{.Version}} (%s)\n"+
-			"Copyright (c) 2019 Carlos Abalde\n", revision))
+			"Copyright (c) 2019 Carlos Abalde\n", config.GetRevision()))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(
