@@ -2,6 +2,8 @@
 
 - Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted & gzipped using one or more public keys (i.e. recipients).
 
+- Secrets can be tagged using an unlimited number of (name, value) pairs stored as unencrypted meta-information of the gzipped file.
+
 - A simple yet flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret can be easily restricted to one or more teams and / or individual users. It's up to you how to share the secrets across the organization: a git repository, a shared folder, etc.
 
 - Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys.
@@ -24,7 +26,7 @@ SETUP
    `-- secrets/   
    ```
 
-3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching the URI of the secret (e.g. `foo/answers.md`) against each regexp in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for regexps and for expressions associated to each regexp. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
+3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching the URI of the secret (e.g. `foo/answers.md`) against each regexp in the configuration (future versions might allow also matching not only against URIs but also tags). When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for regexps and for expressions associated to each regexp. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
    ```
    root: /home/carlos/pgp-tomb
 

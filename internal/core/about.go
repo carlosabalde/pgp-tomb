@@ -100,4 +100,10 @@ func About(uri string) {
 			"! Missing recipients: %s\n",
 			strings.Join(missingRecipients, ", "))
 	}
+
+	// Render tags.
+	fmt.Println("- Tags:");
+	for _, tag := range s.GetTags() {
+		fmt.Printf("  + %s: %s\n", tag.Name, tag.Value);
+	}
 }

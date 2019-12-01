@@ -43,6 +43,14 @@ func (secret *Secret) GetUri() string {
 	return secret.uri
 }
 
+func (secret *Secret) GetTags() []Tag {
+	return secret.tags
+}
+
+func (secret *Secret) SetTags(tags []Tag) {
+	secret.tags = tags
+}
+
 func (secret *Secret) GetPath() string {
 	return secret.path
 }

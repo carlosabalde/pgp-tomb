@@ -14,7 +14,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
-func Edit(uri string) {
+func Edit(uri string, dropTags bool, tags []secret.Tag) {
 	// Initializations.
 	s := secret.New(uri)
 
@@ -53,9 +53,20 @@ func Edit(uri string) {
 		}).Fatal("Failed to open external editor!")
 	}
 
-	// Check if secret has changed after closing the editor.
-	if digest != md5File(output.Name()) {
-		Set(uri, output.Name())
+	// Decide new tags.
+	var updateTags bool
+	var newTags []secret.Tag
+	if dropTags {
+		updateTags = true
+		newTags = tags
+	} else {
+		updateTags = false
+		newTags = s.GetTags()
+	}
+
+	// Check if secret needs to be updated.
+	if updateTags || digest != md5File(output.Name()) {
+		Set(uri, output.Name(), newTags)
 	} else {
 		fmt.Println("No changes!")
 	}
