@@ -1,4 +1,5 @@
 - v0.1.2 (?):
+    + Secrets (.pgp -> .secret) nos stored as gzipped files including custom headers.
     + ...
 
 - v0.1.1 (2019-11-29):

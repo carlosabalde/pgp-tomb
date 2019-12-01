@@ -9,7 +9,7 @@ import (
 )
 
 const PublicKeyExtension = ".pub"
-const SecretExtension = ".pgp"
+const SecretExtension = ".secret"
 const DefaultEditor = "vim"
 
 type Permission struct {

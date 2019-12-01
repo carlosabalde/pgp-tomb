@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
+	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
 func Set(uri, inputPath string) {
+	// Initializations.
+	s := secret.New(uri)
+
 	// Initialize input reader.
 	var input io.Reader
 	if inputPath == "" {
@@ -28,27 +30,8 @@ func Set(uri, inputPath string) {
 		input = file
 	}
 
-	// Create missing folders in path to secret.
-	secretPath := getPathForSecret(uri)
-	if err := os.MkdirAll(filepath.Dir(secretPath), os.ModePerm); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  secretPath,
-		}).Fatal("Failed to create path to secret!")
-	}
-
-	// Initialize output writer.
-	output, err := os.Create(secretPath)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"path":  secretPath,
-		}).Fatal("Failed to open output file!")
-	}
-	defer output.Close()
-
 	// Encrypt secret.
-	if err := pgp.Encrypt(input, output, getPublicKeysForSecret(uri)); err != nil {
+	if err := s.Encrypt(input); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 		}).Fatal("Failed to encrypt file!")

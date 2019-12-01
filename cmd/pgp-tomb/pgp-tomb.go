@@ -36,21 +36,21 @@ __pgp-tomb_complete_secret_uri() {
 	fi
 
 	if [ ! -z "$secrets" ]; then
-		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.pgp' -- "$cur"))
+		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.secret' -- "$cur"))
 
 		if [ "${#COMPREPLY[@]}" == "1" ]; then
 			if [ -d "$secrets/$COMPREPLY" ]; then
 				LASTCHAR=/
 				COMPREPLY=$(printf %q%s "$COMPREPLY" "$LASTCHAR")
 			elif [ -f "$secrets/$COMPREPLY" ]; then
-				COMPREPLY=$(printf %q "${COMPREPLY%.pgp}")
+				COMPREPLY=$(printf %q "${COMPREPLY%.secret}")
 			fi
 		else
 			for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
 				[ -d "$secrets/${COMPREPLY[$i]}" ] && \
 					COMPREPLY[$i]=${COMPREPLY[$i]}/
 				[ -f "$secrets/${COMPREPLY[$i]}" ] && \
-					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.pgp}")
+					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.secret}")
 			done
 		fi
 	else
