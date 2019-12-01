@@ -65,14 +65,12 @@ __pgp-tomb_custom_func() {
 )
 
 var (
-	version  string
-	revision string
-	cfgFile  string
-	verbose  bool
-	root     string
-	rootCmd  = &cobra.Command{
+	cfgFile string
+	verbose bool
+	root    string
+	rootCmd = &cobra.Command{
 		Use:                    "pgp-tomb",
-		Version:                version,
+		Version:                config.GetVersion(),
 		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
@@ -130,7 +128,7 @@ func main() {
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
 		"PGP Tomb version {{.Version}} (%s)\n"+
-			"Copyright (c) 2019 Carlos Abalde\n", revision))
+			"Copyright (c) 2019 Carlos Abalde\n", config.GetRevision()))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(

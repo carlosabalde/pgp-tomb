@@ -203,7 +203,7 @@ func reEncryptSecret(s *secret.Secret) bool {
 	if err := s.Decrypt(buffer); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"uri":  s.GetUri(),
+			"uri":   s.GetUri(),
 		}).Error("Failed to decrypt file for re-encryption! Are you allowed to access it?")
 		return false
 	}
@@ -212,7 +212,7 @@ func reEncryptSecret(s *secret.Secret) bool {
 	if err := s.Encrypt(buffer); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"uri":  s.GetUri(),
+			"uri":   s.GetUri(),
 		}).Error("Failed to re-encrypt file!")
 		return false
 	}

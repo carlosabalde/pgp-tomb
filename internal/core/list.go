@@ -93,7 +93,7 @@ func listSecret(path string, grep *regexp.Regexp, key *pgp.PublicKey) {
 		} else {
 			logrus.WithFields(logrus.Fields{
 				"error": err,
-				"uri": s.GetUri(),
+				"uri":   s.GetUri(),
 			}).Fatal("Failed to get expected public keys!")
 		}
 		if !found {

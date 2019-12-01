@@ -8,6 +8,11 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
+var (
+	version  string
+	revision string
+)
+
 const PublicKeyExtension = ".pub"
 const SecretExtension = ".secret"
 const DefaultEditor = "vim"
@@ -20,6 +25,14 @@ type Permission struct {
 type PermissionExpression struct {
 	Deny bool
 	Keys []string
+}
+
+func GetVersion() string {
+	return version
+}
+
+func GetRevision() string {
+	return revision
 }
 
 func GetPublicKeys() map[string]*pgp.PublicKey {

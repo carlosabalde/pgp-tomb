@@ -55,7 +55,7 @@ func About(uri string) {
 	} else {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"uri": s.GetUri(),
+			"uri":   s.GetUri(),
 		}).Fatal("Failed to get expected public keys!")
 	}
 
