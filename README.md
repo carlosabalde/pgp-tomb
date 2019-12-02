@@ -130,4 +130,6 @@ COPYRIGHT
 
 See LICENSE.md for details.
 
+Parsing and evaluation of queries is strongly based on [Binary Expression Tree](https://github.com/alexkappa/exp) project by Alex Kalyvitis.
+
 Copyright (c) 2019 Carlos Abalde <carlos.abalde@gmail.com>
