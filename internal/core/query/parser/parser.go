@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -95,6 +96,10 @@ func (self *parser) parseFactor() error {
 		self.token = self.nextToken()
 
 	case T_IDENTIFIER:
+		if self.token.Value != "uri" &&
+		   !strings.HasPrefix(self.token.Value, "tags.") {
+			return self.formatError("invalid identifier '%s'", self.token.Value)
+		}
 		self.tree = newTree()
 		identifierToken := self.token
 		self.token = self.nextToken()
