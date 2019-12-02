@@ -5,30 +5,30 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
+	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func List(folder, grep, keyAlias string) {
-	// Initialize grep.
-	var grepRegexp *regexp.Regexp
-	if grep != "" {
+func List(folder, queryString, keyAlias string) {
+	// Initialize query.
+	var queryParsed query.Query
+	if queryString != "" {
 		var err error
-		grepRegexp, err = regexp.Compile(grep)
+		queryParsed, err = query.Parse(queryString)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"regexp": grep,
-				"error":  err,
-			}).Fatal("Failed to compile grep regexp!")
+				"query": queryString,
+				"error": err,
+			}).Fatal("Failed to parse query!")
 		}
 	} else {
-		grepRegexp = nil
+		queryParsed = query.True
 	}
 
 	// Initialize key.
@@ -60,7 +60,7 @@ func List(folder, grep, keyAlias string) {
 				return err
 			}
 			if !info.IsDir() && filepath.Ext(path) == config.SecretExtension {
-				listSecret(path, grepRegexp, key)
+				listSecret(path, queryParsed, key)
 			}
 			return nil
 		}); err != nil {
@@ -70,14 +70,21 @@ func List(folder, grep, keyAlias string) {
 	}
 }
 
-func listSecret(path string, grep *regexp.Regexp, key *pgp.PublicKey) {
+func listSecret(path string, q query.Query, key *pgp.PublicKey) {
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 	uri = strings.TrimSuffix(uri, config.SecretExtension)
 
-	s := secret.New(uri)
+	s, err := secret.Load(uri)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+			"uri":   s.GetUri(),
+		}).Fatal("Failed to load secret!")
+		return
+	}
 
-	if grep != nil && !grep.Match([]byte(s.GetUri())) {
+	if !q.Eval(s) {
 		return
 	}
 

@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -14,28 +13,29 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
+	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/maps"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(folder, grep string, workers int, force, dryRun bool) {
+func Rebuild(folder, queryString string, workers int, force, dryRun bool) {
 	// Initialize counter.
 	checked := 0
 
-	// Initialize grep.
-	var grepRegexp *regexp.Regexp
-	if grep != "" {
+	// Initialize query.
+	var queryParsed query.Query
+	if queryString != "" {
 		var err error
-		grepRegexp, err = regexp.Compile(grep)
+		queryParsed, err = query.Parse(queryString)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"regexp": grep,
-				"error":  err,
-			}).Fatal("Failed to compile limit regexp!")
+				"query": queryString,
+				"error": err,
+			}).Fatal("Failed to parse query!")
 		}
 	} else {
-		grepRegexp = nil
+		queryParsed = query.True
 	}
 
 	// Check folder.
@@ -63,7 +63,7 @@ func Rebuild(folder, grep string, workers int, force, dryRun bool) {
 				return err
 			}
 			if !info.IsDir() {
-				if checkFile(path, info, tasksChannel, grepRegexp, force, dryRun) {
+				if checkFile(path, info, tasksChannel, queryParsed, force, dryRun) {
 					checked++
 				}
 			}
@@ -84,23 +84,32 @@ func Rebuild(folder, grep string, workers int, force, dryRun bool) {
 
 func checkFile(
 	path string, info os.FileInfo, tasksChannel chan func() string,
-	grep *regexp.Regexp, force, dryRun bool) bool {
-	var task func() string
-	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
-	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
-
+	q query.Query, force, dryRun bool) bool {
 	if filepath.Ext(path) == config.SecretExtension {
+		uri := strings.TrimPrefix(path, config.GetSecretsRoot())
+		uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 		uri = strings.TrimSuffix(uri, config.SecretExtension)
-		task = func() string {
-			return checkSecret(secret.New(uri), force, dryRun)
+
+		s, err := secret.Load(uri)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+				"uri":   s.GetUri(),
+			}).Fatal("Failed to load secret!")
+			return false
+		}
+
+		if q.Eval(s) {
+			task := func() string {
+				return checkSecret(s, force, dryRun)
+			}
+			tasksChannel <- task
+			return true
 		}
 	} else {
-		task = func() string {
+		task := func() string {
 			return checkUnexpectFile(path, dryRun)
 		}
-	}
-
-	if grep == nil || grep.Match([]byte(uri)) {
 		tasksChannel <- task
 		return true
 	}
