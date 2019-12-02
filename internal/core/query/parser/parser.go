@@ -23,125 +23,125 @@ type parser struct {
 	token token
 }
 
-func (p *parser) nextToken() token {
-	return p.lexer.token()
+func (self *parser) nextToken() token {
+	return self.lexer.token()
 }
 
-func (p *parser) formatError(format string, v ...interface{}) error {
+func (self *parser) formatError(format string, v ...interface{}) error {
 	return errors.Errorf(
 		"syntax error in %d:%d: %s",
-		p.token.line, p.token.col, fmt.Sprintf(format, v...))
+		self.token.line, self.token.column, fmt.Sprintf(format, v...))
 }
 
-func (p *parser) parse() (*tree, error) {
-	p.tree = newTree()
+func (self *parser) parse() (*tree, error) {
+	self.tree = newTree()
 
-	if err := p.parseExpression(); err != nil {
+	if err := self.parseExpression(); err != nil {
 		return nil, err
 	}
 
-	if p.token.Type != T_EOF {
-		return nil, p.formatError("unexpected '%s'", p.token.Value)
+	if self.token.Type != T_EOF {
+		return nil, self.formatError("unexpected '%s'", self.token.Value)
 	}
 
-	return p.tree, nil
+	return self.tree, nil
 }
 
-func (p *parser) parseExpression() error {
-	if err := p.parseTerm(); err != nil {
+func (self *parser) parseExpression() error {
+	if err := self.parseTerm(); err != nil {
 		return err
 	}
 
-	for p.token.Type == T_LOGICAL_OR {
+	for self.token.Type == T_LOGICAL_OR {
 		orNode := newTree()
-		orNode.value = p.token
-		orNode.left = p.tree
-		if err := p.parseTerm(); err != nil {
+		orNode.value = self.token
+		orNode.left = self.tree
+		if err := self.parseTerm(); err != nil {
 			return err
 		}
-		orNode.right = p.tree
-		p.tree = orNode
+		orNode.right = self.tree
+		self.tree = orNode
 	}
 
 	return nil
 }
 
-func (p *parser) parseTerm() error {
-	if err := p.parseFactor(); err != nil {
+func (self *parser) parseTerm() error {
+	if err := self.parseFactor(); err != nil {
 		return err
 	}
 
-	for p.token.Type == T_LOGICAL_AND {
+	for self.token.Type == T_LOGICAL_AND {
 		andNode := newTree()
-		andNode.value = p.token
-		andNode.left = p.tree
-		if err := p.parseFactor(); err != nil {
+		andNode.value = self.token
+		andNode.left = self.tree
+		if err := self.parseFactor(); err != nil {
 			return err
 		}
-		andNode.right = p.tree
-		p.tree = andNode
+		andNode.right = self.tree
+		self.tree = andNode
 	}
 
 	return nil
 }
 
-func (p *parser) parseFactor() error {
-	p.token = p.nextToken()
+func (self *parser) parseFactor() error {
+	self.token = self.nextToken()
 
-	switch p.token.Type {
+	switch self.token.Type {
 	case T_BOOLEAN:
-		p.tree = newTree()
-		p.tree.value = p.token
-		p.token = p.nextToken()
+		self.tree = newTree()
+		self.tree.value = self.token
+		self.token = self.nextToken()
 
 	case T_IDENTIFIER:
-		p.tree = newTree()
-		identifierToken := p.token
-		p.token = p.nextToken()
-		switch p.token.Type {
+		self.tree = newTree()
+		identifierToken := self.token
+		self.token = self.nextToken()
+		switch self.token.Type {
 		case T_IS_EQUAL, T_IS_NOT_EQUAL, T_MATCHES, T_NOT_MATCHES:
-			p.tree.value = p.token
-			p.tree.left = newTree()
-			p.tree.left.value = identifierToken
-			p.token = p.nextToken()
-			if p.token.Type == T_STRING {
-				p.tree.right = newTree()
-				p.tree.right.value = p.token
-				p.token = p.nextToken()
+			self.tree.value = self.token
+			self.tree.left = newTree()
+			self.tree.left.value = identifierToken
+			self.token = self.nextToken()
+			if self.token.Type == T_STRING {
+				self.tree.right = newTree()
+				self.tree.right.value = self.token
+				self.token = self.nextToken()
 			} else {
-				return p.formatError("string value expected")
+				return self.formatError("string value expected")
 			}
 		default:
-			return p.formatError("comparison operator expected")
+			return self.formatError("comparison operator expected")
 		}
 
 	case T_LOGICAL_NOT:
 		notNode := newTree()
-		notNode.value = p.token
-		if err := p.parseFactor(); err != nil {
+		notNode.value = self.token
+		if err := self.parseFactor(); err != nil {
 			return err
 		}
-		notNode.left = p.tree
-		p.tree = notNode
+		notNode.left = self.tree
+		self.tree = notNode
 
 	case T_LEFT_PAREN:
-		if err := p.parseExpression(); err != nil {
+		if err := self.parseExpression(); err != nil {
 			return err
 		}
-		if p.token.Type == T_RIGHT_PAREN {
-			p.token = p.nextToken()
+		if self.token.Type == T_RIGHT_PAREN {
+			self.token = self.nextToken()
 		} else {
-			return p.formatError("missing right parenthesis")
+			return self.formatError("missing right parenthesis")
 		}
 
 	case T_RIGHT_PAREN:
-		return p.formatError("unexpected right parenthesis")
+		return self.formatError("unexpected right parenthesis")
 
 	case T_EOF:
-		return p.formatError("unexpected EOF")
+		return self.formatError("unexpected EOF")
 
 	default:
-		return p.formatError("unexpected '%s'", p.token.Value)
+		return self.formatError("unexpected '%s'", self.token.Value)
 	}
 
 	return nil
@@ -153,6 +153,6 @@ func newParser(l *lexer) *parser {
 	}
 }
 
-func Parse(s string) (Tree, error) {
-	return newParser(newLexer(s)).parse()
+func Parse(str string) (Tree, error) {
+	return newParser(newLexer(str)).parse()
 }

@@ -4,17 +4,17 @@ type logicalOr struct {
 	items []Query
 }
 
-func (o logicalOr) Eval(p Params) bool {
-	for _, item := range o.items {
-		if item.Eval(p) {
+func (self logicalOr) Eval(identifiers Identifiers) bool {
+	for _, item := range self.items {
+		if item.Eval(identifiers) {
 			return true
 		}
 	}
 	return false
 }
 
-func (o logicalOr) String() string {
-	return sprintf("(%s)", join(o.items, " || "))
+func (self logicalOr) String() string {
+	return sprintf("(%s)", join(self.items, " || "))
 }
 
 func Or(items ...Query) Query {

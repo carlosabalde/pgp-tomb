@@ -4,12 +4,12 @@ type logicalNot struct {
 	item Query
 }
 
-func (n logicalNot) Eval(p Params) bool {
-	return !n.item.Eval(p)
+func (self logicalNot) Eval(identifiers Identifiers) bool {
+	return !self.item.Eval(identifiers)
 }
 
-func (n logicalNot) String() string {
-	return sprintf("!%s", n.item)
+func (self logicalNot) String() string {
+	return sprintf("!%s", self.item)
 }
 
 func Not(item Query) Query {

@@ -9,22 +9,22 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/query/parser"
 )
 
-// This interface represents a tree node.
+// Representation of a tree node modeling a boolean query expression.
 type Query interface {
-	Eval(Params) bool
+	Eval(Identifiers) bool
 }
 
 // Defines the interface needed by 'Query' in order to be able to evaluate
 // query expressions.
-type Params interface {
+type Identifiers interface {
 	Get(string) string
 }
 
-// Simple implementation of 'Params' using a map of strings.
+// Simple implementation of 'Identifiers' using a map of strings.
 type Map map[string]string
 
-func (m Map) Get(key string) string {
-	return m[key]
+func (self Map) Get(key string) string {
+	return self[key]
 }
 
 func Parse(query string) (Query, error) {
@@ -35,8 +35,8 @@ func Parse(query string) (Query, error) {
 	return visit(tree)
 }
 
-func visit(t parser.Tree) (Query, error) {
-	token := t.Value()
+func visit(tree parser.Tree) (Query, error) {
+	token := tree.Value()
 
 	switch token.Type {
 	case parser.T_BOOLEAN:
@@ -49,42 +49,34 @@ func visit(t parser.Tree) (Query, error) {
 			return nil, errors.Errorf("unexpected boolean value '%s'", token.Value)
 		}
 
-	case parser.T_LOGICAL_AND:
-		l, err := visit(t.Left())
+	case parser.T_LOGICAL_AND, parser.T_LOGICAL_OR:
+		left, err := visit(tree.Left())
 		if err != nil {
 			return nil, err
 		}
-		r, err := visit(t.Right())
+		right, err := visit(tree.Right())
 		if err != nil {
 			return nil, err
 		}
-		return And(l, r), nil
-
-	case parser.T_LOGICAL_OR:
-		l, err := visit(t.Left())
-		if err != nil {
-			return nil, err
+		if token.Type == parser.T_LOGICAL_AND {
+			return And(left, right), nil
 		}
-		r, err := visit(t.Right())
-		if err != nil {
-			return nil, err
-		}
-		return Or(l, r), nil
+		return Or(left, right), nil
 
 	case parser.T_LOGICAL_NOT:
-		l, err := visit(t.Left())
+		left, err := visit(tree.Left())
 		if err != nil {
 			return nil, err
 		}
-		return Not(l), nil
+		return Not(left), nil
 
 	case parser.T_IS_EQUAL, parser.T_IS_NOT_EQUAL:
-		if t.Left().Value().Type != parser.T_IDENTIFIER ||
-			t.Right().Value().Type != parser.T_STRING {
+		if tree.Left().Value().Type != parser.T_IDENTIFIER ||
+			tree.Right().Value().Type != parser.T_STRING {
 			return nil, errors.New("invalid comparison")
 		}
-		identifier := t.Left().Value().Value
-		str := t.Right().Value().Value
+		identifier := tree.Left().Value().Value
+		str := tree.Right().Value().Value
 		query := Equal(identifier, str)
 		if token.Type == parser.T_IS_EQUAL {
 			return query, nil
@@ -92,12 +84,12 @@ func visit(t parser.Tree) (Query, error) {
 		return Not(query), nil
 
 	case parser.T_MATCHES, parser.T_NOT_MATCHES:
-		if t.Left().Value().Type != parser.T_IDENTIFIER ||
-			t.Right().Value().Type != parser.T_STRING {
+		if tree.Left().Value().Type != parser.T_IDENTIFIER ||
+			tree.Right().Value().Type != parser.T_STRING {
 			return nil, errors.New("invalid comparison")
 		}
-		identifier := t.Left().Value().Value
-		regexp := t.Right().Value().Value
+		identifier := tree.Left().Value().Value
+		regexp := tree.Right().Value().Value
 		query, err := Match(identifier, regexp)
 		if err != nil {
 			return nil, err

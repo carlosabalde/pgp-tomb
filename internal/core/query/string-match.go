@@ -12,12 +12,12 @@ type stringMatch struct {
 	regexp       *regexp.Regexp
 }
 
-func (m stringMatch) Eval(p Params) bool {
-	return m.regexp.Match([]byte(p.Get(m.identifier)))
+func (self stringMatch) Eval(identifiers Identifiers) bool {
+	return self.regexp.Match([]byte(identifiers.Get(self.identifier)))
 }
 
-func (m stringMatch) String() string {
-	return sprintf("(%s ~ '%s')", m.identifier, m.regexpString)
+func (self stringMatch) String() string {
+	return sprintf("(%s ~ '%s')", self.identifier, self.regexpString)
 }
 
 func Match(identifier, regexpString string) (Query, error) {

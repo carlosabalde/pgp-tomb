@@ -5,12 +5,12 @@ type stringEquality struct {
 	str        string
 }
 
-func (e stringEquality) Eval(p Params) bool {
-	return p.Get(e.identifier) == e.str
+func (self stringEquality) Eval(identifiers Identifiers) bool {
+	return identifiers.Get(self.identifier) == self.str
 }
 
-func (e stringEquality) String() string {
-	return sprintf("(%s == '%s')", e.identifier, e.str)
+func (self stringEquality) String() string {
+	return sprintf("(%s == '%s')", self.identifier, self.str)
 }
 
 func Equal(identifier, str string) Query {

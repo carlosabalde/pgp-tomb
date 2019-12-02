@@ -32,37 +32,37 @@ func New(uri string) *Secret {
 	}
 }
 
-func (secret *Secret) Exists() bool {
-	if info, err := os.Stat(secret.path); os.IsNotExist(err) || info.IsDir() {
+func (self *Secret) Exists() bool {
+	if info, err := os.Stat(self.path); os.IsNotExist(err) || info.IsDir() {
 		return false
 	}
 	return true
 }
 
-func (secret *Secret) GetUri() string {
-	return secret.uri
+func (self *Secret) GetUri() string {
+	return self.uri
 }
 
-func (secret *Secret) GetTags() []Tag {
-	return secret.tags
+func (self *Secret) GetTags() []Tag {
+	return self.tags
 }
 
-func (secret *Secret) SetTags(tags []Tag) {
-	secret.tags = tags
+func (self *Secret) SetTags(tags []Tag) {
+	self.tags = tags
 }
 
-func (secret *Secret) GetPath() string {
-	return secret.path
+func (self *Secret) GetPath() string {
+	return self.path
 }
 
-func (secret *Secret) Encrypt(input io.Reader) error {
-	output, err := secret.NewWriter()
+func (self *Secret) Encrypt(input io.Reader) error {
+	output, err := self.NewWriter()
 	if err != nil {
 		return errors.Wrap(err, "failed to open secret")
 	}
 	defer output.Close()
 
-	keys, err := secret.GetExpectedPublicKeys()
+	keys, err := self.GetExpectedPublicKeys()
 	if err != nil {
 		return errors.Wrap(err, "failed to get expected public keys")
 	}
@@ -74,8 +74,8 @@ func (secret *Secret) Encrypt(input io.Reader) error {
 	return nil
 }
 
-func (secret *Secret) Decrypt(output io.Writer) error {
-	input, err := secret.NewReader()
+func (self *Secret) Decrypt(output io.Writer) error {
+	input, err := self.NewReader()
 	if err != nil {
 		return errors.Wrap(err, "failed to open secret")
 	}
@@ -88,13 +88,13 @@ func (secret *Secret) Decrypt(output io.Writer) error {
 	return nil
 }
 
-func (secret *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
+func (self *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
 	// Build list of key aliases according to the configured permissions &
 	// keepers.
 	permissions := config.GetPermissions()
 	aliases := make([]string, 0)
 	for _, permission := range permissions {
-		if permission.Regexp.Match([]byte(secret.uri)) {
+		if permission.Regexp.Match([]byte(self.uri)) {
 			for _, expression := range permission.Expressions {
 				var tmp reflect.Value
 				var err error
@@ -125,8 +125,8 @@ func (secret *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
 	return result, nil
 }
 
-func (secret *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
-	input, err := secret.NewReader()
+func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
+	input, err := self.NewReader()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open secret")
 	}

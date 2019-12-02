@@ -2,12 +2,12 @@ package query
 
 type boolean bool
 
-func (b boolean) Eval(p Params) bool {
-	return bool(b)
+func (self boolean) Eval(identifiers Identifiers) bool {
+	return bool(self)
 }
 
-func (b boolean) String() string {
-	if bool(b) {
+func (self boolean) String() string {
+	if bool(self) {
 		return "true"
 	}
 	return "false"

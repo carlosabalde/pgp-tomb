@@ -8,14 +8,14 @@ import (
 )
 
 type token struct {
-	Type  tokenType
-	Value string
-	line  int
-	col   int
+	Type   tokenType
+	Value  string
+	line   int
+	column int
 }
 
-func (i token) String() string {
-	return fmt.Sprintf("%s:%q", i.Type, i.Value)
+func (self token) String() string {
+	return fmt.Sprintf("%s:%q", self.Type, self.Value)
 }
 
 type tokenType int
@@ -59,12 +59,12 @@ var tokenName = map[tokenType]string{
 	T_NOT_MATCHES:  "T_NOT_MATCHES",
 }
 
-func (i tokenType) String() string {
-	s := tokenName[i]
-	if s == "" {
-		return fmt.Sprintf("T_UNKNOWN_%d", int(i))
+func (self tokenType) String() string {
+	result := tokenName[self]
+	if result == "" {
+		return fmt.Sprintf("T_UNKNOWN_%d", int(self))
 	}
-	return s
+	return result
 }
 
 const eof = -1
@@ -84,88 +84,87 @@ type lexer struct {
 }
 
 // Returns the next rune in the input.
-func (l *lexer) next() (r rune) {
-	if l.pos >= len(l.input) {
-		l.width = 0
+func (self *lexer) next() (result rune) {
+	if self.pos >= len(self.input) {
+		self.width = 0
 		return eof
 	}
-	r, l.width = utf8.DecodeRuneInString(l.input[l.pos:])
-	l.pos += l.width
-	return r
+	result, self.width = utf8.DecodeRuneInString(self.input[self.pos:])
+	self.pos += self.width
+	return result
 }
 
 // Steps back one rune. Can only be called once per call of next.
-func (l *lexer) backup() {
-	l.pos -= l.width
+func (self *lexer) backup() {
+	self.pos -= self.width
 }
 
 // Returns the string consumed by the lexer after the last emit.
-func (l *lexer) buffer() string {
-	return l.input[l.start:l.pos]
+func (self *lexer) buffer() string {
+	return self.input[self.start:self.pos]
 }
 
 // Passes an token back to the client.
-func (l *lexer) emit(t tokenType) {
-	l.tokens <- token{
+func (self *lexer) emit(t tokenType) {
+	self.tokens <- token{
 		t,
-		l.buffer(),
-		l.lineNum(),
-		l.columnNum(),
+		self.buffer(),
+		self.lineNum(),
+		self.columnNum(),
 	}
-	l.start = l.pos
+	self.start = self.pos
 }
 
 // Skips over the pending input before this point.
-func (l *lexer) ignore() {
-	l.start = l.pos
+func (self *lexer) ignore() {
+	self.start = self.pos
 }
 
 // Reports which line we're on. Doing it this way means we don't have to worry
 // about peek double counting.
-func (l *lexer) lineNum() int {
-	return 1 + strings.Count(l.input[:l.pos], "\n")
+func (self *lexer) lineNum() int {
+	return 1 + strings.Count(self.input[:self.pos], "\n")
 }
 
 // Reports the character of the current line we're on.
-func (l *lexer) columnNum() int {
-	if lf := strings.LastIndex(l.input[:l.pos], "\n"); lf != -1 {
-		return len(l.input[lf+1 : l.pos])
+func (self *lexer) columnNum() int {
+	if lf := strings.LastIndex(self.input[:self.pos], "\n"); lf != -1 {
+		return len(self.input[lf+1 : self.pos])
 	}
-	return len(l.input[:l.pos])
+	return len(self.input[:self.pos])
 }
 
 // Returns an error token and terminates the scan by passing back a nil pointer
 // that will be the next state, terminating l.token.
-func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens <- token{
+func (self *lexer) errorf(format string, args ...interface{}) stateFn {
+	self.tokens <- token{
 		T_ERR,
 		fmt.Sprintf(format, args...),
-		l.lineNum(),
-		l.columnNum(),
+		self.lineNum(),
+		self.columnNum(),
 	}
 	return nil
 }
 
 // Returns the next token from the input.
-func (l *lexer) token() token {
+func (self *lexer) token() token {
 	for {
 		select {
-		case t := <-l.tokens:
+		case t := <-self.tokens:
 			return t
 		default:
-			l.state = l.state(l)
+			self.state = self.state(self)
 		}
 	}
 }
 
 // Creates a new scanner for the input string.
 func newLexer(input string) *lexer {
-	l := &lexer{
+	return &lexer{
 		input:  input,
 		tokens: make(chan token, 8),
+		state:  stateInit,
 	}
-	l.state = stateInit
-	return l
 }
 
 ////////////////////////////////////////////////////////////////////////////////

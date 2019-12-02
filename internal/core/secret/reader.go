@@ -14,25 +14,25 @@ type Reader struct {
 	gzip *gzip.Reader
 }
 
-func (reader *Reader) Read(p []byte) (int, error) {
-	return reader.gzip.Read(p)
+func (self *Reader) Read(p []byte) (int, error) {
+	return self.gzip.Read(p)
 }
 
-func (reader *Reader) Close() error {
-	if err := reader.gzip.Close(); err != nil {
-		reader.file.Close()
+func (self *Reader) Close() error {
+	if err := self.gzip.Close(); err != nil {
+		self.file.Close()
 		return errors.Wrap(err, "failed to close gzip reader")
 	}
 
-	if err := reader.file.Close(); err != nil {
+	if err := self.file.Close(); err != nil {
 		return errors.Wrap(err, "failed to close file reader")
 	}
 
 	return nil
 }
 
-func (secret *Secret) NewReader() (*Reader, error) {
-	fileReader, err := os.Open(secret.path)
+func (self *Secret) NewReader() (*Reader, error) {
+	fileReader, err := os.Open(self.path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open file")
 	}
@@ -43,14 +43,14 @@ func (secret *Secret) NewReader() (*Reader, error) {
 		return nil, errors.Wrap(err, "failed to gunzip secret")
 	}
 
-	if err := json.Unmarshal(gzipReader.Extra, &secret.tags); err != nil {
+	if err := json.Unmarshal(gzipReader.Extra, &self.tags); err != nil {
 		gzipReader.Close()
 		fileReader.Close()
 		return nil, errors.Wrap(err, "failed to unserialize tags")
 	}
 
-	sort.Slice(secret.tags, func(i, j int) bool {
-		return secret.tags[i].Name < secret.tags[j].Name
+	sort.Slice(self.tags, func(i, j int) bool {
+		return self.tags[i].Name < self.tags[j].Name
 	})
 
 	return &Reader{
