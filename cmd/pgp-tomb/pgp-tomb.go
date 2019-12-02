@@ -210,7 +210,7 @@ func main() {
 		"read secret from file")
 	cmdSet.PersistentFlags().StringArrayVar(
 		&cmdSetTags, "tag", nil,
-		"tag secret using this 'name: value' pair")
+		"tag secret using 'name: value' pair")
 
 	// 'edit' command.
 	var cmdEditDropTags bool
@@ -239,7 +239,7 @@ func main() {
 		"drop existing tags")
 	cmdEdit.PersistentFlags().StringArrayVar(
 		&cmdEditTags, "tag", nil,
-		"tag secret using this 'name: value' pair")
+		"tag secret using 'name: value' pair")
 
 	// 'about' command.
 	cmdAbout := &cobra.Command{
