@@ -20,13 +20,6 @@ type Identifiers interface {
 	Get(string) string
 }
 
-// Simple implementation of 'Identifiers' using a map of strings.
-type Map map[string]string
-
-func (self Map) Get(key string) string {
-	return self[key]
-}
-
 func Parse(query string) (Query, error) {
 	tree, err := parser.Parse(query)
 	if err != nil {

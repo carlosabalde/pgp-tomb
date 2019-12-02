@@ -5,13 +5,13 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/maps"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
@@ -223,21 +223,21 @@ func initPermissionsConfig() {
 		teams := GetTeams()
 		for _, itemSliceValue := range viper.Get("permissions").([]interface{}) {
 			item := itemSliceValue.(map[interface{}]interface{})
-			for regexpStringMapKey, expressionsMapValue := range item {
+			for queryStringMapKey, expressionsMapValue := range item {
 				if expressionsMapValue != nil {
-					regexpString := regexpStringMapKey.(string)
+					queryString := queryStringMapKey.(string)
 					expressions := expressionsMapValue.([]interface{})
 
 					var permission Permission
 
-					regexp, err := regexp.Compile(regexpString)
+					queryParsed, err := query.Parse(queryString)
 					if err != nil {
 						logrus.WithFields(logrus.Fields{
-							"regexp": regexpString,
-							"error":  err,
-						}).Fatal("Failed to compile permissions regexp!")
+							"query": queryString,
+							"error": err,
+						}).Fatal("Failed to parse permissions query!")
 					}
-					permission.Regexp = regexp
+					permission.Query = queryParsed
 
 					permission.Expressions = make([]PermissionExpression, 0)
 					for _, expressionStringSliceValue := range expressions {
@@ -247,7 +247,7 @@ func initPermissionsConfig() {
 
 						if expressionString[0] != '+' && expressionString[0] != '-' {
 							logrus.WithFields(logrus.Fields{
-								"regexp":     regexpString,
+								"query":      queryString,
 								"expression": expressionString,
 							}).Fatal("Found invalid permissions expression!")
 						}
@@ -259,7 +259,7 @@ func initPermissionsConfig() {
 						if _, found := keys[subject]; !found {
 							if keys, found := teams[subject]; !found {
 								logrus.WithFields(logrus.Fields{
-									"regexp":     regexpString,
+									"query":      queryString,
 									"expression": expressionString,
 								}).Fatal("Found unknown key or team in permissions expression!")
 							} else {

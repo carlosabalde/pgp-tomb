@@ -26,8 +26,8 @@ teams:
     - dave
 
 permissions:
-  - ^foo/:
+  - uri ~ '^foo/':
       - +team-1
-  - ^foo/bar/lorem ipsum\.txt$:
+  - uri ~ '^foo/bar/lorem ipsum\.txt$' && tags.type != 'acme':
       - -team-1
       - +chuck

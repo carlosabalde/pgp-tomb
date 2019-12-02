@@ -1,10 +1,9 @@
 package config
 
 import (
-	"regexp"
-
 	"github.com/spf13/viper"
 
+	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
@@ -18,7 +17,7 @@ const SecretExtension = ".secret"
 const DefaultEditor = "vim"
 
 type Permission struct {
-	Regexp      *regexp.Regexp
+	Query       query.Query
 	Expressions []PermissionExpression
 }
 

@@ -15,9 +15,6 @@ import (
 )
 
 func Edit(uri string, dropTags bool, tags []secret.Tag) {
-	// Initializations.
-	s := secret.New(uri)
-
 	// Initialize output writer.
 	output, err := ioutil.TempFile("", "pgp-tomb-")
 	if err != nil {
@@ -27,8 +24,10 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 	}
 	defer os.Remove(output.Name())
 
-	// Check secret exists.
-	if s.Exists() {
+	// Try to load secret.
+	s, err := secret.Load(uri)
+	switch err := err.(type) {
+	case nil:
 		if err := s.Decrypt(output); err != nil {
 			fmt.Fprintln(
 				os.Stderr,
@@ -36,6 +35,13 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 			os.Exit(1)
 		}
 		output.Close()
+	case *secret.DoesNotExist:
+	default:
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+			"uri":   uri,
+		}).Error("Failed to load secret!")
+		return
 	}
 
 	// Compute initial digest.

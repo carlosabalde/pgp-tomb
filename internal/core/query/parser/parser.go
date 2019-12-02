@@ -97,7 +97,7 @@ func (self *parser) parseFactor() error {
 
 	case T_IDENTIFIER:
 		if self.token.Value != "uri" &&
-		   !strings.HasPrefix(self.token.Value, "tags.") {
+			!strings.HasPrefix(self.token.Value, "tags.") {
 			return self.formatError("invalid identifier '%s'", self.token.Value)
 		}
 		self.tree = newTree()

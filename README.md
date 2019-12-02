@@ -26,7 +26,7 @@ SETUP
    `-- secrets/   
    ```
 
-3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching the URI of the secret (e.g. `foo/answers.md`) against each regexp in the configuration (future versions might allow also matching not only against URIs but also tags). When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for regexps and for expressions associated to each regexp. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
+3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each query in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for queries as well as for expressions associated to each query. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
    ```
    root: /home/carlos/pgp-tomb
 
@@ -42,9 +42,9 @@ SETUP
        - chuck
 
    permissions:
-     - ^foo/:
+     - uri ~ '^foo/':
          - +team-1
-     - ^foo/bar/:
+     - uri ~ '^foo/bar/' && tags.type != 'acme':
          - -bob
          - +team-2
    ```

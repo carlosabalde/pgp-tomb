@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -24,6 +25,13 @@ type Tag struct {
 	Value string
 }
 
+type DoesNotExist struct {
+}
+
+func (self *DoesNotExist) Error() string {
+	return "secret does not exist"
+}
+
 func New(uri string) *Secret {
 	return &Secret{
 		uri:  uri,
@@ -32,11 +40,21 @@ func New(uri string) *Secret {
 	}
 }
 
-func (self *Secret) Exists() bool {
-	if info, err := os.Stat(self.path); os.IsNotExist(err) || info.IsDir() {
-		return false
+func Load(uri string) (*Secret, error) {
+	result := New(uri)
+
+	if info, err := os.Stat(result.path); os.IsNotExist(err) || info.IsDir() {
+		return nil, &DoesNotExist{}
 	}
-	return true
+
+	// This is required in order to populate tags.
+	input, err := result.NewReader()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open secret")
+	}
+	defer input.Close()
+
+	return result, nil
 }
 
 func (self *Secret) GetUri() string {
@@ -94,7 +112,7 @@ func (self *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
 	permissions := config.GetPermissions()
 	aliases := make([]string, 0)
 	for _, permission := range permissions {
-		if permission.Regexp.Match([]byte(self.uri)) {
+		if permission.Query.Eval(self) {
 			for _, expression := range permission.Expressions {
 				var tmp reflect.Value
 				var err error
@@ -138,4 +156,18 @@ func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
 	}
 
 	return ids, nil
+}
+
+// Implementation of 'query.Identifiers'.
+func (self *Secret) Get(key string) string {
+	if key == "uri" {
+		return self.uri
+	} else if strings.HasPrefix(key, "tags.") {
+		for _, tag := range self.tags {
+			if tag.Name == key[5:] {
+				return tag.Value
+			}
+		}
+	}
+	return ""
 }

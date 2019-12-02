@@ -13,13 +13,20 @@ import (
 )
 
 func About(uri string) {
-	// Initializations.
-	s := secret.New(uri)
-
-	// Check secret exists.
-	if !s.Exists() {
-		fmt.Fprintln(os.Stderr, "Secret does not exist!")
-		os.Exit(1)
+	// Load secret.
+	s, err := secret.Load(uri)
+	if err != nil {
+		switch err := err.(type) {
+		case *secret.DoesNotExist:
+			fmt.Fprintln(os.Stderr, "Secret does not exist!")
+			os.Exit(1)
+		default:
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+				"uri":   uri,
+			}).Error("Failed to load secret!")
+			return
+		}
 	}
 
 	// Extract current recipients.
