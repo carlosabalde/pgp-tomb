@@ -14,5 +14,5 @@ func (self stringEquality) String() string {
 }
 
 func Equal(identifier, str string) Query {
-	return stringEquality{identifier, str}
+	return &stringEquality{identifier, str}
 }

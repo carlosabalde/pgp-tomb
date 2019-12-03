@@ -25,5 +25,5 @@ func Match(identifier, regexpString string) (Query, error) {
 	if err != nil {
 		return nil, errors.Errorf("failed to compile regexp '%s'", regexpString)
 	}
-	return stringMatch{identifier, regexpString, regexp}, nil
+	return &stringMatch{identifier, regexpString, regexp}, nil
 }

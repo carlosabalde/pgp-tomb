@@ -18,5 +18,5 @@ func (self logicalOr) String() string {
 }
 
 func Or(items ...Query) Query {
-	return logicalOr{items}
+	return &logicalOr{items}
 }

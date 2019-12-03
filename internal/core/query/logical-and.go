@@ -18,5 +18,5 @@ func (self logicalAnd) String() string {
 }
 
 func And(items ...Query) Query {
-	return logicalAnd{items}
+	return &logicalAnd{items}
 }

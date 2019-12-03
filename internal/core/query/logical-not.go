@@ -13,5 +13,5 @@ func (self logicalNot) String() string {
 }
 
 func Not(item Query) Query {
-	return logicalNot{item}
+	return &logicalNot{item}
 }
