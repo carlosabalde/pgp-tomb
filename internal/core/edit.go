@@ -62,7 +62,7 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 	// Decide new tags.
 	var updateTags bool
 	var newTags []secret.Tag
-	if dropTags {
+	if dropTags || s == nil {
 		updateTags = true
 		newTags = tags
 	} else {
