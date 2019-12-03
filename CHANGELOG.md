@@ -1,5 +1,11 @@
-- v0.2.2 (?):
+- v0.2.3 (?):
     + ...
+
+- v0.2.2 (2019-12-03):
+    + Replace permissions regexps by queries.
+    + Replace --grep by --query.
+    + Add --long to 'ls' command.
+    + Remove 'about' command.
 
 - v0.2.1 (2019-12-01):
     + Add support for tags.

@@ -128,7 +128,7 @@ func parseTags(tags []string) []secret.Tag {
 	for _, tag := range tags {
 		items := strings.Split(tag, ":")
 		result = append(result, secret.Tag{
-			Name: strings.TrimSpace(items[0]),
+			Name:  strings.TrimSpace(items[0]),
 			Value: strings.TrimSpace(items[1]),
 		})
 	}
@@ -210,7 +210,7 @@ func main() {
 		"read secret from file")
 	cmdSet.PersistentFlags().StringArrayVar(
 		&cmdSetTags, "tag", nil,
-		"tag secret using this 'name: value' pair")
+		"tag secret using 'name: value' pair")
 
 	// 'edit' command.
 	var cmdEditDropTags bool
@@ -239,25 +239,10 @@ func main() {
 		"drop existing tags")
 	cmdEdit.PersistentFlags().StringArrayVar(
 		&cmdEditTags, "tag", nil,
-		"tag secret using this 'name: value' pair")
-
-	// 'about' command.
-	cmdAbout := &cobra.Command{
-		Use:   "about <secret URI>",
-		Short: "Show details about secret",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("requires a secret URI argument")
-			}
-			return nil
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			core.About(args[0])
-		},
-	}
+		"tag secret using 'name: value' pair")
 
 	// 'rebuild' command.
-	var cmdRebuildGrep string
+	var cmdRebuildQuery string
 	var cmdRebuildWorkers int
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
@@ -279,13 +264,13 @@ func main() {
 				folder = args[0]
 			}
 			core.Rebuild(
-				folder, cmdRebuildGrep, cmdRebuildWorkers, cmdRebuildForce,
+				folder, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
 				cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
-		&cmdRebuildGrep, "grep", "",
-		"limit rebuild to secrets with URIs matching this regexp")
+		&cmdRebuildQuery, "query", "",
+		"limit rebuild to secrets matching this query")
 	cmdRebuild.PersistentFlags().IntVar(
 		&cmdRebuildWorkers, "workers", 4,
 		"set preferred number of workers")
@@ -297,7 +282,8 @@ func main() {
 		"run without actually executing any side effect")
 
 	// 'list' command.
-	var cmdListGrep string
+	var cmdListLong bool
+	var cmdListQuery string
 	var cmdListKey string
 	cmdList := &cobra.Command{
 		Use:     "list [folder]",
@@ -314,12 +300,15 @@ func main() {
 			if len(args) > 0 {
 				folder = args[0]
 			}
-			core.List(folder, cmdListGrep, cmdListKey)
+			core.List(folder, cmdListLong, cmdListQuery, cmdListKey)
 		},
 	}
+	cmdList.PersistentFlags().BoolVarP(
+		&cmdListLong, "long", "l", false,
+		"list using the long format")
 	cmdList.PersistentFlags().StringVar(
-		&cmdListGrep, "grep", "",
-		"limit listing to secrets with URIs matching this regexp")
+		&cmdListQuery, "query", "",
+		"limit listing to secrets matching this query")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListKey, "key", "",
 		"list only secrets readable by this key alias")
@@ -355,7 +344,6 @@ func main() {
 
 	// Register commands & execute.
 	rootCmd.AddCommand(
-		cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList, cmdBash,
-		cmdZsh)
+		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdBash, cmdZsh)
 	rootCmd.Execute()
 }
