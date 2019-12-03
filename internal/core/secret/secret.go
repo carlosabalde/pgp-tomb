@@ -108,11 +108,10 @@ func (self *Secret) Decrypt(output io.Writer) error {
 func (self *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
 	// Build list of key aliases according to the configured permissions &
 	// keepers.
-	permissions := config.GetPermissions()
 	aliases := make([]string, 0)
-	for _, permission := range permissions {
-		if permission.Query.Eval(self) {
-			for _, expression := range permission.Expressions {
+	for _, rule := range config.GetPermissionRules() {
+		if rule.Query.Eval(self) {
+			for _, expression := range rule.Expressions {
 				var tmp reflect.Value
 				var err error
 				if expression.Deny {

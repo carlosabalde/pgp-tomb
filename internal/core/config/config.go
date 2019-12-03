@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
@@ -14,9 +15,10 @@ var (
 
 const PublicKeyExtension = ".pub"
 const SecretExtension = ".secret"
+const TemplateExtension = ".template"
 const DefaultEditor = "vim"
 
-type Permission struct {
+type PermissionRule struct {
 	Query       query.Query
 	Expressions []PermissionExpression
 }
@@ -24,6 +26,11 @@ type Permission struct {
 type PermissionExpression struct {
 	Deny bool
 	Keys []string
+}
+
+type TemplateRule struct {
+	Query     query.Query
+	Temaplate string
 }
 
 func GetVersion() string {
@@ -50,8 +57,16 @@ func GetTeams() map[string][]string {
 	return viper.Get("teams").(map[string][]string)
 }
 
-func GetPermissions() []Permission {
-	return viper.Get("permissions").([]Permission)
+func GetPermissionRules() []PermissionRule {
+	return viper.Get("permission-rules").([]PermissionRule)
+}
+
+func GetTemplates() map[string]*gojsonschema.JSONLoader {
+	return viper.Get("templates").(map[string]*gojsonschema.JSONLoader)
+}
+
+func GetTemplateRules() []TemplateRule {
+	return viper.Get("template-rules").([]TemplateRule)
 }
 
 func GetGPG() string {

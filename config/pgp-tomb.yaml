@@ -31,3 +31,6 @@ permissions:
   - uri ~ '^foo/bar/lorem ipsum\.txt$' && tags.type != 'acme':
       - -team-1
       - +chuck
+
+templates:
+  - uri ~ '\.login$': login

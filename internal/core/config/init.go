@@ -24,7 +24,9 @@ func Init() {
 	initSecretsConfig()
 	initKeepersConfig()
 	initTeamsConfig()
-	initPermissionsConfig()
+	initPermissionRulesConfig()
+	initTemplatesConfig()
+	initTemplateRulesConfig()
 }
 
 func initRootConfig() {
@@ -215,8 +217,8 @@ func initTeamsConfig() {
 	viper.Set("teams", teams)
 }
 
-func initPermissionsConfig() {
-	permissions := make([]Permission, 0)
+func initPermissionRulesConfig() {
+	rules := make([]PermissionRule, 0)
 
 	if _, ok := viper.Get("permissions").([]interface{}); ok {
 		keys := GetPublicKeys()
@@ -228,7 +230,7 @@ func initPermissionsConfig() {
 					queryString := queryStringMapKey.(string)
 					expressions := expressionsMapValue.([]interface{})
 
-					var permission Permission
+					var rule PermissionRule
 
 					queryParsed, err := query.Parse(queryString)
 					if err != nil {
@@ -237,9 +239,9 @@ func initPermissionsConfig() {
 							"error": err,
 						}).Fatal("Failed to parse permissions query!")
 					}
-					permission.Query = queryParsed
+					rule.Query = queryParsed
 
-					permission.Expressions = make([]PermissionExpression, 0)
+					rule.Expressions = make([]PermissionExpression, 0)
 					for _, expressionStringSliceValue := range expressions {
 						var expression PermissionExpression
 
@@ -269,10 +271,10 @@ func initPermissionsConfig() {
 							expression.Keys = append(expression.Keys, subject)
 						}
 
-						permission.Expressions = append(permission.Expressions, expression)
+						rule.Expressions = append(rule.Expressions, expression)
 					}
 
-					permissions = append(permissions, permission)
+					rules = append(rules, rule)
 					break
 				}
 			}
@@ -280,8 +282,17 @@ func initPermissionsConfig() {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"len": len(permissions),
-	}).Info("Permissions initialized")
+		"len": len(rules),
+	}).Info("Permission rules initialized")
 
-	viper.Set("permissions", permissions)
+	viper.Set("permissions", nil)
+	viper.Set("permission-rules", rules)
+}
+
+func initTemplatesConfig() {
+	// TODO.
+}
+
+func initTemplateRulesConfig() {
+	// TODO.
 }
