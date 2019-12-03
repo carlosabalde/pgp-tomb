@@ -49,12 +49,23 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 		return
 	}
 
+	// Decide new tags.
+	var updateTags bool
+	var newTags []secret.Tag
+	if dropTags {
+		updateTags = true
+		newTags = tags
+	} else {
+		updateTags = false
+		newTags = s.GetTags()
+	}
+
 	// Avoid loosing edited changes.
 	for {
 		// Compute initial digest.
 		digest := md5File(output.Name())
 
-		// Open decrypted secret in an external editor.
+		// Open decrypted secret / initial skeleton in an external editor.
 		cmd := exec.Command(config.GetEditor(), output.Name())
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -64,17 +75,6 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 				"editor": config.GetEditor(),
 				"error":  err,
 			}).Fatal("Failed to open external editor!")
-		}
-
-		// Decide new tags.
-		var updateTags bool
-		var newTags []secret.Tag
-		if dropTags {
-			updateTags = true
-			newTags = tags
-		} else {
-			updateTags = false
-			newTags = s.GetTags()
 		}
 
 		// Check if secret needs to be updated.
