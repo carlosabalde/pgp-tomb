@@ -18,6 +18,11 @@ const SecretExtension = ".secret"
 const TemplateExtension = ".template"
 const DefaultEditor = "vim"
 
+type Team struct {
+	Alias string
+	Keys  []*pgp.PublicKey
+}
+
 type PermissionRule struct {
 	Query       query.Query
 	Expressions []PermissionExpression
@@ -25,12 +30,17 @@ type PermissionRule struct {
 
 type PermissionExpression struct {
 	Deny bool
-	Keys []string
+	Keys []*pgp.PublicKey
+}
+
+type Template struct {
+	Alias  string
+	Schema *gojsonschema.Schema
 }
 
 type TemplateRule struct {
 	Query    query.Query
-	Template string
+	Template *Template
 }
 
 func GetVersion() string {
@@ -49,20 +59,20 @@ func GetSecretsRoot() string {
 	return viper.GetString("secrets")
 }
 
-func GetKeepers() []string {
-	return viper.GetStringSlice("keepers")
+func GetKeepers() []*pgp.PublicKey {
+	return viper.Get("keepers").([]*pgp.PublicKey)
 }
 
-func GetTeams() map[string][]string {
-	return viper.Get("teams").(map[string][]string)
+func GetTeams() map[string]Team {
+	return viper.Get("teams").(map[string]Team)
 }
 
 func GetPermissionRules() []PermissionRule {
 	return viper.Get("permission-rules").([]PermissionRule)
 }
 
-func GetTemplates() map[string]*gojsonschema.Schema {
-	return viper.Get("templates").(map[string]*gojsonschema.Schema)
+func GetTemplates() map[string]*Template {
+	return viper.Get("templates").(map[string]*Template)
 }
 
 func GetTemplateRules() []TemplateRule {

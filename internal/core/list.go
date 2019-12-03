@@ -206,6 +206,11 @@ func renderSecretDetails(s *secret.Secret) {
 			strings.Join(missingRecipients, ", "))
 	}
 
+	// Render template.
+	if template := s.GetTemplate(); template != nil {
+		fmt.Printf("  + template: %s\n", template.Alias)
+	}
+
 	// Render tags.
 	for _, tag := range s.GetTags() {
 		fmt.Printf("  + tags.%s: %s\n", tag.Name, tag.Value)

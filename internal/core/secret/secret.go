@@ -106,38 +106,32 @@ func (self *Secret) Decrypt(output io.Writer) error {
 }
 
 func (self *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
-	// Build list of key aliases according to the configured permissions &
-	// keepers.
-	aliases := make([]string, 0)
+	result := make([]*pgp.PublicKey, 0)
+
 	for _, rule := range config.GetPermissionRules() {
 		if rule.Query.Eval(self) {
 			for _, expression := range rule.Expressions {
 				var tmp reflect.Value
 				var err error
 				if expression.Deny {
-					tmp, err = slices.Difference(aliases, expression.Keys)
+					tmp, err = slices.Difference(result, expression.Keys)
 				} else {
-					tmp, err = slices.Union(aliases, expression.Keys)
+					tmp, err = slices.Union(result, expression.Keys)
 				}
 				if err != nil {
 					return nil, errors.Wrap(err, "unexpected error")
 				}
-				aliases = tmp.Interface().([]string)
+				result = tmp.Interface().([]*pgp.PublicKey)
 			}
 		}
 	}
-	tmp, err := slices.Union(aliases, config.GetKeepers())
+
+	tmp, err := slices.Union(result, config.GetKeepers())
 	if err != nil {
 		return nil, errors.Wrap(err, "unexpected error")
 	}
-	aliases = tmp.Interface().([]string)
+	result = tmp.Interface().([]*pgp.PublicKey)
 
-	// Expand key aliases to full 'pgp.PublicKey' instances.
-	keys := config.GetPublicKeys()
-	result := make([]*pgp.PublicKey, len(aliases))
-	for i, alias := range aliases {
-		result[i] = keys[alias]
-	}
 	return result, nil
 }
 
@@ -154,6 +148,16 @@ func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
 	}
 
 	return ids, nil
+}
+
+func (self *Secret) GetTemplate() *config.Template {
+	for _, rule := range config.GetTemplateRules() {
+		if rule.Query.Eval(self) {
+			return rule.Template
+		}
+	}
+
+	return nil
 }
 
 // Implementation of 'query.Context' interface.

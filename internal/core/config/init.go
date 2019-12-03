@@ -119,7 +119,7 @@ func initPublicKeysConfig() {
 						"error": err,
 					}).Fatal("Failed to load public key!")
 				}
-				keys[key.Alias] = key
+				keys[key.Alias] = &key
 			}
 
 			return nil
@@ -161,58 +161,70 @@ func initSecretsConfig() {
 }
 
 func initKeepersConfig() {
-	keepers := viper.GetStringSlice("keepers")
+	rawKeepers := viper.GetStringSlice("keepers")
 
-	if len(keepers) < 1 {
+	if len(rawKeepers) < 1 {
 		logrus.Fatal("At least one keeper is required!")
 	}
 
+	keepers := make([]*pgp.PublicKey, 0)
+	aliases := make([]string, 0)
+
 	keys := GetPublicKeys()
-	for _, keyAlias := range keepers {
-		if _, found := keys[keyAlias]; !found {
+	for _, keyAlias := range rawKeepers {
+		key, found := keys[keyAlias]
+		if !found {
 			logrus.WithFields(logrus.Fields{
 				"key": keyAlias,
 			}).Fatal("Found an unknown keeper!")
 		}
+		keepers = append(keepers, key)
+		aliases = append(aliases, key.Alias)
 	}
 
-	sort.Strings(keepers)
+	sort.Strings(aliases)
 	logrus.WithFields(logrus.Fields{
-		"keys": strings.Join(keepers, ", "),
+		"keys": strings.Join(aliases, ", "),
 	}).Info("Keepers initialized")
+	viper.Set("keepers", keepers)
 }
 
 func initTeamsConfig() {
-	teams := make(map[string][]string)
+	teams := make(map[string]Team)
 
 	keys := GetPublicKeys()
-	for teamId, teamMapValue := range viper.GetStringMap("teams") {
-		teams[teamId] = make([]string, 0)
+	for teamAlias, teamMapValue := range viper.GetStringMap("teams") {
+		team := Team{
+			Alias: teamAlias,
+			Keys:  make([]*pgp.PublicKey, 0),
+		}
 		if teamMapValue != nil {
 			teamMembers := teamMapValue.([]interface{})
 			for _, keySliceValue := range teamMembers {
 				if keySliceValue != nil {
 					keyAlias := keySliceValue.(string)
-					if _, found := keys[keyAlias]; !found {
+					key, found := keys[keyAlias]
+					if !found {
 						logrus.WithFields(logrus.Fields{
 							"key":  keyAlias,
-							"team": teamId,
+							"team": teamAlias,
 						}).Fatal("Found unknown key in team!")
 					}
-					teams[teamId] = append(teams[teamId], keyAlias)
+					team.Keys = append(team.Keys, key)
 				}
 			}
 		}
+		teams[teamAlias] = team
 	}
 
 	res, err := maps.KeysSlice(teams)
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	teamsIds := res.Interface().([]string)
-	sort.Strings(teamsIds)
+	aliases := res.Interface().([]string)
+	sort.Strings(aliases)
 	logrus.WithFields(logrus.Fields{
-		"teams": strings.Join(teamsIds, ", "),
+		"teams": strings.Join(aliases, ", "),
 	}).Info("Teams initialized")
 
 	viper.Set("teams", teams)
@@ -257,19 +269,19 @@ func initPermissionRulesConfig() {
 
 						expression.Deny = expressionString[0] == '-'
 
-						expression.Keys = make([]string, 0)
+						expression.Keys = make([]*pgp.PublicKey, 0)
 						subject := expressionString[1:]
-						if _, found := keys[subject]; !found {
-							if keys, found := teams[subject]; !found {
+						if key, found := keys[subject]; !found {
+							if team, found := teams[subject]; !found {
 								logrus.WithFields(logrus.Fields{
 									"query":      queryString,
 									"expression": expressionString,
 								}).Fatal("Found unknown key or team in permissions expression!")
 							} else {
-								expression.Keys = keys
+								expression.Keys = team.Keys
 							}
 						} else {
-							expression.Keys = append(expression.Keys, subject)
+							expression.Keys = append(expression.Keys, key)
 						}
 
 						rule.Expressions = append(rule.Expressions, expression)
@@ -291,7 +303,7 @@ func initPermissionRulesConfig() {
 }
 
 func initTemplatesConfig() {
-	templates := make(map[string]*gojsonschema.Schema)
+	templates := make(map[string]*Template)
 	templatesRoot := path.Join(viper.GetString("root"), "templates")
 
 	if info, err := os.Stat(templatesRoot); os.IsNotExist(err) || !info.IsDir() {
@@ -317,7 +329,10 @@ func initTemplatesConfig() {
 						"error": err,
 					}).Fatal("Failed to load template!")
 				}
-				templates[alias] = schema
+				templates[alias] = &Template{
+					Alias:  alias,
+					Schema: schema,
+				}
 			}
 
 			return nil
@@ -365,13 +380,14 @@ func initTemplateRulesConfig() {
 					}
 					rule.Query = queryParsed
 
-					if _, found := templates[templateAlias]; !found {
+					template, found := templates[templateAlias]
+					if !found {
 						logrus.WithFields(logrus.Fields{
 							"query":    queryString,
 							"template": templateAlias,
 						}).Fatal("Found unknown template in template rule!")
 					}
-					rule.Template = templateAlias
+					rule.Template = template
 
 					rules = append(rules, rule)
 					break
