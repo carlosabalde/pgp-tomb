@@ -4,9 +4,9 @@ type logicalAnd struct {
 	items []Query
 }
 
-func (self logicalAnd) Eval(identifiers Identifiers) bool {
+func (self logicalAnd) Eval(context Context) bool {
 	for _, item := range self.items {
-		if !item.Eval(identifiers) {
+		if !item.Eval(context) {
 			return false
 		}
 	}

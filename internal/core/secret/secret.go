@@ -158,8 +158,8 @@ func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
 	return ids, nil
 }
 
-// Implementation of 'query.Identifiers'.
-func (self *Secret) Get(key string) string {
+// Implementation of 'query.Context'.
+func (self *Secret) GetIdentifier(key string) string {
 	if key == "uri" {
 		return self.uri
 	} else if strings.HasPrefix(key, "tags.") {

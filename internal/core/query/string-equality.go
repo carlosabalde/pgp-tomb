@@ -5,8 +5,8 @@ type stringEquality struct {
 	str        string
 }
 
-func (self stringEquality) Eval(identifiers Identifiers) bool {
-	return identifiers.Get(self.identifier) == self.str
+func (self stringEquality) Eval(context Context) bool {
+	return context.GetIdentifier(self.identifier) == self.str
 }
 
 func (self stringEquality) String() string {

@@ -12,8 +12,8 @@ type stringMatch struct {
 	regexp       *regexp.Regexp
 }
 
-func (self stringMatch) Eval(identifiers Identifiers) bool {
-	return self.regexp.Match([]byte(identifiers.Get(self.identifier)))
+func (self stringMatch) Eval(context Context) bool {
+	return self.regexp.Match([]byte(context.GetIdentifier(self.identifier)))
 }
 
 func (self stringMatch) String() string {

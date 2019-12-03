@@ -11,13 +11,13 @@ import (
 
 // Representation of a tree node modeling a boolean query expression.
 type Query interface {
-	Eval(Identifiers) bool
+	Eval(Context) bool
 }
 
 // Defines the interface needed by 'Query' in order to be able to evaluate
 // query expressions.
-type Identifiers interface {
-	Get(string) string
+type Context interface {
+	GetIdentifier(string) string
 }
 
 func Parse(query string) (Query, error) {

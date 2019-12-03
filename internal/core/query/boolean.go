@@ -2,7 +2,7 @@ package query
 
 type boolean bool
 
-func (self boolean) Eval(identifiers Identifiers) bool {
+func (self boolean) Eval(context Context) bool {
 	return bool(self)
 }
 
