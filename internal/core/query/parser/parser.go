@@ -19,9 +19,9 @@ import (
 //   <operator>   ::= '=='|'!='|'~'|'!~'
 
 type parser struct {
-	lexer *lexer
-	tree  *tree
-	token token
+	lexer        *lexer
+	currentNode  *tree
+	currentToken token
 }
 
 func (self *parser) nextToken() token {
@@ -31,21 +31,21 @@ func (self *parser) nextToken() token {
 func (self *parser) formatError(format string, v ...interface{}) error {
 	return errors.Errorf(
 		"syntax error in %d:%d: %s",
-		self.token.line, self.token.column, fmt.Sprintf(format, v...))
+		self.currentToken.line, self.currentToken.column, fmt.Sprintf(format, v...))
 }
 
 func (self *parser) parse() (*tree, error) {
-	self.tree = newTree()
+	self.currentNode = newTree()
 
 	if err := self.parseExpression(); err != nil {
 		return nil, err
 	}
 
-	if self.token.Type != T_EOF {
-		return nil, self.formatError("unexpected '%s'", self.token.Value)
+	if self.currentToken.Type != T_EOF {
+		return nil, self.formatError("unexpected '%s'", self.currentToken.Value)
 	}
 
-	return self.tree, nil
+	return self.currentNode, nil
 }
 
 func (self *parser) parseExpression() error {
@@ -53,15 +53,15 @@ func (self *parser) parseExpression() error {
 		return err
 	}
 
-	for self.token.Type == T_LOGICAL_OR {
+	for self.currentToken.Type == T_LOGICAL_OR {
 		orNode := newTree()
-		orNode.value = self.token
-		orNode.left = self.tree
+		orNode.value = self.currentToken
+		orNode.left = self.currentNode
 		if err := self.parseTerm(); err != nil {
 			return err
 		}
-		orNode.right = self.tree
-		self.tree = orNode
+		orNode.right = self.currentNode
+		self.currentNode = orNode
 	}
 
 	return nil
@@ -72,47 +72,47 @@ func (self *parser) parseTerm() error {
 		return err
 	}
 
-	for self.token.Type == T_LOGICAL_AND {
+	for self.currentToken.Type == T_LOGICAL_AND {
 		andNode := newTree()
-		andNode.value = self.token
-		andNode.left = self.tree
+		andNode.value = self.currentToken
+		andNode.left = self.currentNode
 		if err := self.parseFactor(); err != nil {
 			return err
 		}
-		andNode.right = self.tree
-		self.tree = andNode
+		andNode.right = self.currentNode
+		self.currentNode = andNode
 	}
 
 	return nil
 }
 
 func (self *parser) parseFactor() error {
-	self.token = self.nextToken()
+	self.currentToken = self.nextToken()
 
-	switch self.token.Type {
+	switch self.currentToken.Type {
 	case T_BOOLEAN:
-		self.tree = newTree()
-		self.tree.value = self.token
-		self.token = self.nextToken()
+		self.currentNode = newTree()
+		self.currentNode.value = self.currentToken
+		self.currentToken = self.nextToken()
 
 	case T_IDENTIFIER:
-		if self.token.Value != "uri" &&
-			!strings.HasPrefix(self.token.Value, "tags.") {
-			return self.formatError("invalid identifier '%s'", self.token.Value)
+		if self.currentToken.Value != "uri" &&
+			!strings.HasPrefix(self.currentToken.Value, "tags.") {
+			return self.formatError("invalid identifier '%s'", self.currentToken.Value)
 		}
-		self.tree = newTree()
-		identifierToken := self.token
-		self.token = self.nextToken()
-		switch self.token.Type {
+		self.currentNode = newTree()
+		identifierToken := self.currentToken
+		self.currentToken = self.nextToken()
+		switch self.currentToken.Type {
 		case T_IS_EQUAL, T_IS_NOT_EQUAL, T_MATCHES, T_NOT_MATCHES:
-			self.tree.value = self.token
-			self.tree.left = newTree()
-			self.tree.left.value = identifierToken
-			self.token = self.nextToken()
-			if self.token.Type == T_STRING {
-				self.tree.right = newTree()
-				self.tree.right.value = self.token
-				self.token = self.nextToken()
+			self.currentNode.value = self.currentToken
+			self.currentNode.left = newTree()
+			self.currentNode.left.value = identifierToken
+			self.currentToken = self.nextToken()
+			if self.currentToken.Type == T_STRING {
+				self.currentNode.right = newTree()
+				self.currentNode.right.value = self.currentToken
+				self.currentToken = self.nextToken()
 			} else {
 				return self.formatError("string value expected")
 			}
@@ -122,31 +122,31 @@ func (self *parser) parseFactor() error {
 
 	case T_LOGICAL_NOT:
 		notNode := newTree()
-		notNode.value = self.token
+		notNode.value = self.currentToken
 		if err := self.parseFactor(); err != nil {
 			return err
 		}
-		notNode.left = self.tree
-		self.tree = notNode
+		notNode.left = self.currentNode
+		self.currentNode = notNode
 
-	case T_LEFT_PAREN:
+	case T_LEFT_PARENTHESES:
 		if err := self.parseExpression(); err != nil {
 			return err
 		}
-		if self.token.Type == T_RIGHT_PAREN {
-			self.token = self.nextToken()
+		if self.currentToken.Type == T_RIGHT_PARENTHESES {
+			self.currentToken = self.nextToken()
 		} else {
 			return self.formatError("missing right parenthesis")
 		}
 
-	case T_RIGHT_PAREN:
+	case T_RIGHT_PARENTHESES:
 		return self.formatError("unexpected right parenthesis")
 
 	case T_EOF:
 		return self.formatError("unexpected EOF")
 
 	default:
-		return self.formatError("unexpected '%s'", self.token.Value)
+		return self.formatError("unexpected '%s'", self.currentToken.Value)
 	}
 
 	return nil

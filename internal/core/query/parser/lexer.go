@@ -21,7 +21,7 @@ func (self token) String() string {
 type tokenType int
 
 const (
-	T_ERR tokenType = iota
+	T_ERROR tokenType = iota
 	T_EOF
 
 	T_IDENTIFIER
@@ -33,8 +33,8 @@ const (
 	T_LOGICAL_OR
 	T_LOGICAL_NOT
 
-	T_LEFT_PAREN
-	T_RIGHT_PAREN
+	T_LEFT_PARENTHESES
+	T_RIGHT_PARENTHESES
 
 	T_IS_EQUAL
 	T_IS_NOT_EQUAL
@@ -43,20 +43,20 @@ const (
 )
 
 var tokenNames = map[tokenType]string{
-	T_ERR:          "T_ERR",
-	T_EOF:          "T_EOF",
-	T_IDENTIFIER:   "T_IDENTIFIER",
-	T_STRING:       "T_STRING",
-	T_BOOLEAN:      "T_BOOLEAN",
-	T_LOGICAL_AND:  "T_LOGICAL_AND",
-	T_LOGICAL_OR:   "T_LOGICAL_OR",
-	T_LOGICAL_NOT:  "T_LOGICAL_NOT",
-	T_LEFT_PAREN:   "T_LEFT_PAREN",
-	T_RIGHT_PAREN:  "T_RIGHT_PAREN",
-	T_IS_EQUAL:     "T_IS_EQUAL",
-	T_IS_NOT_EQUAL: "T_IS_NOT_EQUAL",
-	T_MATCHES:      "T_MATCHES",
-	T_NOT_MATCHES:  "T_NOT_MATCHES",
+	T_ERROR:               "T_ERROR",
+	T_EOF:               "T_EOF",
+	T_IDENTIFIER:        "T_IDENTIFIER",
+	T_STRING:            "T_STRING",
+	T_BOOLEAN:           "T_BOOLEAN",
+	T_LOGICAL_AND:       "T_LOGICAL_AND",
+	T_LOGICAL_OR:        "T_LOGICAL_OR",
+	T_LOGICAL_NOT:       "T_LOGICAL_NOT",
+	T_LEFT_PARENTHESES:  "T_LEFT_PARENTHESES",
+	T_RIGHT_PARENTHESES: "T_RIGHT_PARENTHESES",
+	T_IS_EQUAL:          "T_IS_EQUAL",
+	T_IS_NOT_EQUAL:      "T_IS_NOT_EQUAL",
+	T_MATCHES:           "T_MATCHES",
+	T_NOT_MATCHES:       "T_NOT_MATCHES",
 }
 
 func (self tokenType) String() string {
@@ -137,7 +137,7 @@ func (self *lexer) columnNumber() int {
 // that will be the next state.
 func (self *lexer) emitErrorToken(format string, args ...interface{}) stateFn {
 	self.tokens <- token{
-		T_ERR,
+		T_ERROR,
 		fmt.Sprintf(format, args...),
 		self.lineNummber(),
 		self.columnNumber(),
@@ -185,10 +185,10 @@ func stateInit(l *lexer) stateFn {
 	case r == '"':
 		return stateDoubleQuote
 	case r == '(':
-		l.emitToken(T_LEFT_PAREN)
+		l.emitToken(T_LEFT_PARENTHESES)
 		return stateInit
 	case r == ')':
-		l.emitToken(T_RIGHT_PAREN)
+		l.emitToken(T_RIGHT_PARENTHESES)
 		return stateInit
 	}
 	return stateEnd
@@ -198,7 +198,7 @@ func stateInit(l *lexer) stateFn {
 // be requested as it will result in a nil pointer dereference.
 func stateEnd(l *lexer) stateFn {
 	// Always end with EOF token. The parser will keep asking for tokens until
-	// an T_EOF or T_ERR token are encountered.
+	// an T_EOF or T_ERROR token are encountered.
 	l.emitToken(T_EOF)
 
 	return nil
