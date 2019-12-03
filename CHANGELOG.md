@@ -1,5 +1,8 @@
-- v0.2.3 (?):
+- v0.2.4 (?):
     + ...
+
+- v0.2.3 (2019-12-03):
+    + Fix edition when creating new secrets without tags
 
 - v0.2.2 (2019-12-03):
     + Replace permissions regexps by queries.
