@@ -29,8 +29,8 @@ type PermissionExpression struct {
 }
 
 type TemplateRule struct {
-	Query     query.Query
-	Temaplate string
+	Query    query.Query
+	Template string
 }
 
 func GetVersion() string {
@@ -61,8 +61,8 @@ func GetPermissionRules() []PermissionRule {
 	return viper.Get("permission-rules").([]PermissionRule)
 }
 
-func GetTemplates() map[string]*gojsonschema.JSONLoader {
-	return viper.Get("templates").(map[string]*gojsonschema.JSONLoader)
+func GetTemplates() map[string]*gojsonschema.Schema {
+	return viper.Get("templates").(map[string]*gojsonschema.Schema)
 }
 
 func GetTemplateRules() []TemplateRule {

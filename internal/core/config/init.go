@@ -10,6 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/maps"
@@ -290,9 +291,98 @@ func initPermissionRulesConfig() {
 }
 
 func initTemplatesConfig() {
-	// TODO.
+	templates := make(map[string]*gojsonschema.Schema)
+	templatesRoot := path.Join(viper.GetString("root"), "templates")
+
+	if info, err := os.Stat(templatesRoot); os.IsNotExist(err) || !info.IsDir() {
+		logrus.WithFields(logrus.Fields{
+			"folder": templatesRoot,
+			"error":  err,
+		}).Fatal("Failed to access to templates folder!")
+	}
+
+	if err := filepath.Walk(
+		templatesRoot,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if filepath.Ext(path) == TemplateExtension {
+				alias := strings.TrimSuffix(filepath.Base(path), TemplateExtension)
+				schema, err := gojsonschema.NewSchema(gojsonschema.NewReferenceLoader("file://" + path))
+				if err != nil {
+					logrus.WithFields(logrus.Fields{
+						"file":  path,
+						"error": err,
+					}).Fatal("Failed to load template!")
+				}
+				templates[alias] = schema
+			}
+
+			return nil
+		}); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Fatal("Failed to load templates!")
+	}
+
+	res, err := maps.KeysSlice(templates)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	templatesAliases := res.Interface().([]string)
+	sort.Strings(templatesAliases)
+	logrus.WithFields(logrus.Fields{
+		"folder":    templatesRoot,
+		"templates": strings.Join(templatesAliases, ", "),
+	}).Info("Templates initialized")
+
+	viper.Set("templates-rules", viper.Get("templates"))
+	viper.Set("templates", templates)
 }
 
 func initTemplateRulesConfig() {
-	// TODO.
+	rules := make([]TemplateRule, 0)
+
+	if _, ok := viper.Get("templates-rules").([]interface{}); ok {
+		templates := GetTemplates()
+		for _, itemSliceValue := range viper.Get("templates-rules").([]interface{}) {
+			item := itemSliceValue.(map[interface{}]interface{})
+			for queryStringMapKey, templateAliasMapValue := range item {
+				if templateAliasMapValue != nil {
+					queryString := queryStringMapKey.(string)
+					templateAlias := templateAliasMapValue.(string)
+
+					var rule TemplateRule
+
+					queryParsed, err := query.Parse(queryString)
+					if err != nil {
+						logrus.WithFields(logrus.Fields{
+							"query": queryString,
+							"error": err,
+						}).Fatal("Failed to parse permissions query!")
+					}
+					rule.Query = queryParsed
+
+					if _, found := templates[templateAlias]; !found {
+						logrus.WithFields(logrus.Fields{
+							"query":    queryString,
+							"template": templateAlias,
+						}).Fatal("Found unknown template in template rule!")
+					}
+					rule.Template = templateAlias
+
+					rules = append(rules, rule)
+					break
+				}
+			}
+		}
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"len": len(rules),
+	}).Info("Template rules initialized")
+
+	viper.Set("template-rules", rules)
 }
