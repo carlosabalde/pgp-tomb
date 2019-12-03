@@ -42,7 +42,7 @@ const (
 	T_NOT_MATCHES
 )
 
-var tokenName = map[tokenType]string{
+var tokenNames = map[tokenType]string{
 	T_ERR:          "T_ERR",
 	T_EOF:          "T_EOF",
 	T_IDENTIFIER:   "T_IDENTIFIER",
@@ -60,7 +60,7 @@ var tokenName = map[tokenType]string{
 }
 
 func (self tokenType) String() string {
-	result := tokenName[self]
+	result := tokenNames[self]
 	if result == "" {
 		return fmt.Sprintf("T_UNKNOWN_%d", int(self))
 	}
@@ -74,80 +74,79 @@ type stateFn func(*lexer) stateFn
 
 // Holds the state of the scanner.
 type lexer struct {
-	name   string     // The name of the input; used only for error reports.
-	input  string     // The string being scanned.
-	state  stateFn    // The next lexing function to enter.
-	pos    int        // Current position in the input.
-	start  int        // Start position of this token.
-	width  int        // Width of last rune read from input.
-	tokens chan token // Channel of scanned tokens.
+	input         string     // The string being scanned.
+	state         stateFn    // The next lexing function to enter.
+	position      int        // Current position in the input.
+	tokenStart    int        // Start position of this token.
+	lastRuneWidth int        // Width of last rune read from input.
+	tokens        chan token // Channel of scanned tokens.
 }
 
 // Returns the next rune in the input.
-func (self *lexer) next() (result rune) {
-	if self.pos >= len(self.input) {
-		self.width = 0
+func (self *lexer) nextRune() (result rune) {
+	if self.position >= len(self.input) {
+		self.lastRuneWidth = 0
 		return eof
 	}
-	result, self.width = utf8.DecodeRuneInString(self.input[self.pos:])
-	self.pos += self.width
+	result, self.lastRuneWidth = utf8.DecodeRuneInString(self.input[self.position:])
+	self.position += self.lastRuneWidth
 	return result
 }
 
-// Steps back one rune. Can only be called once per call of next.
-func (self *lexer) backup() {
-	self.pos -= self.width
+// Steps back one rune. Can only be called once per call of next!
+func (self *lexer) unreadLastRune() {
+	self.position -= self.lastRuneWidth
 }
 
 // Returns the string consumed by the lexer after the last emit.
-func (self *lexer) buffer() string {
-	return self.input[self.start:self.pos]
+func (self *lexer) bufferSinceLastEmit() string {
+	return self.input[self.tokenStart:self.position]
 }
 
 // Passes an token back to the client.
-func (self *lexer) emit(t tokenType) {
+func (self *lexer) emitToken(t tokenType) {
 	self.tokens <- token{
 		t,
-		self.buffer(),
-		self.lineNum(),
-		self.columnNum(),
+		self.bufferSinceLastEmit(),
+		self.lineNummber(),
+		self.columnNumber(),
 	}
-	self.start = self.pos
+	self.tokenStart = self.position
 }
 
 // Skips over the pending input before this point.
 func (self *lexer) ignore() {
-	self.start = self.pos
+	self.tokenStart = self.position
 }
 
 // Reports which line we're on. Doing it this way means we don't have to worry
 // about peek double counting.
-func (self *lexer) lineNum() int {
-	return 1 + strings.Count(self.input[:self.pos], "\n")
+func (self *lexer) lineNummber() int {
+	return 1 + strings.Count(self.input[:self.position], "\n")
 }
 
 // Reports the character of the current line we're on.
-func (self *lexer) columnNum() int {
-	if lf := strings.LastIndex(self.input[:self.pos], "\n"); lf != -1 {
-		return len(self.input[lf+1 : self.pos])
+func (self *lexer) columnNumber() int {
+	if lf := strings.LastIndex(self.input[:self.position], "\n"); lf != -1 {
+		return len(self.input[lf+1 : self.position])
 	}
-	return len(self.input[:self.pos])
+	return len(self.input[:self.position])
 }
 
 // Returns an error token and terminates the scan by passing back a nil pointer
-// that will be the next state, terminating l.token.
-func (self *lexer) errorf(format string, args ...interface{}) stateFn {
+// that will be the next state.
+func (self *lexer) emitErrorToken(format string, args ...interface{}) stateFn {
 	self.tokens <- token{
 		T_ERR,
 		fmt.Sprintf(format, args...),
-		self.lineNum(),
-		self.columnNum(),
+		self.lineNummber(),
+		self.columnNumber(),
 	}
 	return nil
 }
 
 // Returns the next token from the input.
-func (self *lexer) token() token {
+func (self *lexer) nextToken() token {
 	for {
 		select {
 		case t := <-self.tokens:
@@ -173,7 +172,7 @@ func newLexer(input string) *lexer {
 
 // The initial state of the lexer.
 func stateInit(l *lexer) stateFn {
-	switch r := l.next(); {
+	switch r := l.nextRune(); {
 	case isWhitespace(r):
 		l.ignore()
 		return stateInit
@@ -186,10 +185,10 @@ func stateInit(l *lexer) stateFn {
 	case r == '"':
 		return stateDoubleQuote
 	case r == '(':
-		l.emit(T_LEFT_PAREN)
+		l.emitToken(T_LEFT_PAREN)
 		return stateInit
 	case r == ')':
-		l.emit(T_RIGHT_PAREN)
+		l.emitToken(T_RIGHT_PAREN)
 		return stateInit
 	}
 	return stateEnd
@@ -200,7 +199,7 @@ func stateInit(l *lexer) stateFn {
 func stateEnd(l *lexer) stateFn {
 	// Always end with EOF token. The parser will keep asking for tokens until
 	// an T_EOF or T_ERR token are encountered.
-	l.emit(T_EOF)
+	l.emitToken(T_EOF)
 
 	return nil
 }
@@ -209,20 +208,20 @@ func stateEnd(l *lexer) stateFn {
 func stateIdentifier(l *lexer) stateFn {
 loop:
 	for {
-		switch r := l.next(); {
+		switch r := l.nextRune(); {
 		case isAlphanumeric(r):
 		default:
 			break loop
 		}
 	}
 
-	l.backup()
+	l.unreadLastRune()
 
-	switch l.buffer() {
+	switch l.bufferSinceLastEmit() {
 	case "true", "false":
-		l.emit(T_BOOLEAN)
+		l.emitToken(T_BOOLEAN)
 	default:
-		l.emit(T_IDENTIFIER)
+		l.emitToken(T_IDENTIFIER)
 	}
 
 	return stateInit
@@ -230,28 +229,30 @@ loop:
 
 // Scans an operator from the input stream.
 func stateOperator(l *lexer) stateFn {
-	r := l.next()
+	r := l.nextRune()
 	for isOperator(r) {
-		r = l.next()
+		r = l.nextRune()
 	}
 
-	l.backup()
+	l.unreadLastRune()
 
-	switch l.buffer() {
+	switch l.bufferSinceLastEmit() {
 	case "!":
-		l.emit(T_LOGICAL_NOT)
+		l.emitToken(T_LOGICAL_NOT)
 	case "&&":
-		l.emit(T_LOGICAL_AND)
+		l.emitToken(T_LOGICAL_AND)
 	case "||":
-		l.emit(T_LOGICAL_OR)
+		l.emitToken(T_LOGICAL_OR)
 	case "==":
-		l.emit(T_IS_EQUAL)
+		l.emitToken(T_IS_EQUAL)
 	case "!=":
-		l.emit(T_IS_NOT_EQUAL)
+		l.emitToken(T_IS_NOT_EQUAL)
 	case "~":
-		l.emit(T_MATCHES)
+		l.emitToken(T_MATCHES)
 	case "!~":
-		l.emit(T_NOT_MATCHES)
+		l.emitToken(T_NOT_MATCHES)
+	default:
+		return l.emitErrorToken("unknown operator")
 	}
 
 	return stateInit
@@ -275,15 +276,15 @@ func stateQuote(l *lexer, quote rune) stateFn {
 	l.ignore()
 loop:
 	for {
-		switch l.next() {
+		switch l.nextRune() {
 		case quote:
-			l.backup()
-			l.emit(T_STRING)
-			l.next()
+			l.unreadLastRune()
+			l.emitToken(T_STRING)
+			l.nextRune()
 			l.ignore()
 			break loop
 		case eof:
-			return l.errorf("unexpected EOF")
+			return l.emitErrorToken("unexpected EOF")
 		}
 	}
 

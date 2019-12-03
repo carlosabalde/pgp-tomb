@@ -25,7 +25,7 @@ type parser struct {
 }
 
 func (self *parser) nextToken() token {
-	return self.lexer.token()
+	return self.lexer.nextToken()
 }
 
 func (self *parser) formatError(format string, v ...interface{}) error {
