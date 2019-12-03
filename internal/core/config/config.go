@@ -15,7 +15,8 @@ var (
 
 const PublicKeyExtension = ".pub"
 const SecretExtension = ".secret"
-const TemplateExtension = ".template"
+const TemplateSchemaExtension = ".schema"
+const TemplateSkeletonExtension = ".skeleton"
 const DefaultEditor = "vim"
 
 type Team struct {
@@ -34,8 +35,9 @@ type PermissionExpression struct {
 }
 
 type Template struct {
-	Alias  string
-	Schema *gojsonschema.Schema
+	Alias    string
+	Schema   *gojsonschema.Schema
+	Skeleton []byte
 }
 
 type TemplateRule struct {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -320,18 +321,42 @@ func initTemplatesConfig() {
 				return err
 			}
 
-			if filepath.Ext(path) == TemplateExtension {
-				alias := strings.TrimSuffix(filepath.Base(path), TemplateExtension)
-				schema, err := gojsonschema.NewSchema(gojsonschema.NewReferenceLoader("file://" + path))
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"file":  path,
-						"error": err,
-					}).Fatal("Failed to load template!")
+			ext := filepath.Ext(path)
+
+			if ext == TemplateSchemaExtension || ext == TemplateSkeletonExtension {
+				var alias string
+				if ext == TemplateSchemaExtension {
+					alias = strings.TrimSuffix(filepath.Base(path), TemplateSchemaExtension)
+				} else {
+					alias = strings.TrimSuffix(filepath.Base(path), TemplateSkeletonExtension)
 				}
-				templates[alias] = &Template{
-					Alias:  alias,
-					Schema: schema,
+
+				if _, found := templates[alias]; !found {
+					templates[alias] = &Template{
+						Alias: alias,
+						Schema: nil,
+						Skeleton: nil,
+					}
+				}
+
+				if ext == TemplateSchemaExtension {
+					schema, err := gojsonschema.NewSchema(gojsonschema.NewReferenceLoader("file://" + path))
+					if err != nil {
+						logrus.WithFields(logrus.Fields{
+							"file":  path,
+							"error": err,
+						}).Fatal("Failed to load template schema!")
+					}
+					templates[alias].Schema = schema
+				} else {
+					skeleton, err := ioutil.ReadFile(path)
+					if err != nil {
+						logrus.WithFields(logrus.Fields{
+							"file":  path,
+							"error": err,
+						}).Fatal("Failed to load template skeleton!")
+					}
+					templates[alias].Skeleton = skeleton
 				}
 			}
 

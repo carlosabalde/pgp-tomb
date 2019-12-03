@@ -6,7 +6,7 @@
 
 - A flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
 
-- A flexible JSON Schema based templating model is provided in order to enforce formatting of JSON secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
+- A flexible JSON Schema based templating model is provided in order to enforce formatting of JSON secrets and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
 
 - Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys.
 
@@ -18,7 +18,7 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); (3) the folder containing the JSON Schema templates (`.template` extension is required); and (4) the folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); (3) the folder containing the templates (`.schema` and `.skeleton` extensions are required); and (4) the folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
    |-- keys/
@@ -26,7 +26,8 @@ SETUP
    |   |-- bob.pub
    |   `-- chuck.pub
    |-- templates/
-   |   `-- login.template
+   |   |-- login.skeleton
+   |   `-- login.schema
    `-- secrets/   
    ```
 
