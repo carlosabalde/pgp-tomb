@@ -43,7 +43,7 @@ const (
 )
 
 var tokenNames = map[tokenType]string{
-	T_ERROR:               "T_ERROR",
+	T_ERROR:             "T_ERROR",
 	T_EOF:               "T_EOF",
 	T_IDENTIFIER:        "T_IDENTIFIER",
 	T_STRING:            "T_STRING",

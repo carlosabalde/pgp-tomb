@@ -25,8 +25,7 @@ type Tag struct {
 	Value string
 }
 
-type DoesNotExist struct {
-}
+type DoesNotExist struct{}
 
 func (self *DoesNotExist) Error() string {
 	return "secret does not exist"
@@ -158,7 +157,7 @@ func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
 	return ids, nil
 }
 
-// Implementation of 'query.Context'.
+// Implementation of 'query.Context' interface.
 func (self *Secret) GetIdentifier(key string) string {
 	if key == "uri" {
 		return self.uri

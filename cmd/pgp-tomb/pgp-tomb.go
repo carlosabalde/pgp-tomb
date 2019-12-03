@@ -241,21 +241,6 @@ func main() {
 		&cmdEditTags, "tag", nil,
 		"tag secret using 'name: value' pair")
 
-	// 'about' command.
-	cmdAbout := &cobra.Command{
-		Use:   "about <secret URI>",
-		Short: "Show details about secret",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("requires a secret URI argument")
-			}
-			return nil
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			core.About(args[0])
-		},
-	}
-
 	// 'rebuild' command.
 	var cmdRebuildQuery string
 	var cmdRebuildWorkers int
@@ -297,6 +282,7 @@ func main() {
 		"run without actually executing any side effect")
 
 	// 'list' command.
+	var cmdListLong bool
 	var cmdListQuery string
 	var cmdListKey string
 	cmdList := &cobra.Command{
@@ -314,9 +300,12 @@ func main() {
 			if len(args) > 0 {
 				folder = args[0]
 			}
-			core.List(folder, cmdListQuery, cmdListKey)
+			core.List(folder, cmdListLong, cmdListQuery, cmdListKey)
 		},
 	}
+	cmdList.PersistentFlags().BoolVarP(
+		&cmdListLong, "long", "l", false,
+		"list using the long format")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListQuery, "query", "",
 		"limit listing to secrets matching this query")
@@ -355,7 +344,6 @@ func main() {
 
 	// Register commands & execute.
 	rootCmd.AddCommand(
-		cmdGet, cmdSet, cmdEdit, cmdAbout, cmdRebuild, cmdList, cmdBash,
-		cmdZsh)
+		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdBash, cmdZsh)
 	rootCmd.Execute()
 }
