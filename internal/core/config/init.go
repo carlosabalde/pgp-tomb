@@ -333,8 +333,8 @@ func initTemplatesConfig() {
 
 				if _, found := templates[alias]; !found {
 					templates[alias] = &Template{
-						Alias: alias,
-						Schema: nil,
+						Alias:    alias,
+						Schema:   nil,
 						Skeleton: nil,
 					}
 				}

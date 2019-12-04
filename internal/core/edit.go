@@ -88,7 +88,7 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 				_, err := fmt.Scanln(&response)
 				if err == nil && response == "n" {
 					fmt.Println("Aborted!")
-					break;
+					break
 				}
 			}
 		} else {

@@ -247,7 +247,7 @@ func main() {
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
-		Use:   "rebuild [folder]",
+		Use:   "rebuild [folder|secret URI]",
 		Short: "Rebuild / check secrets",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
@@ -259,12 +259,12 @@ func main() {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			var folder string = ""
+			var folderOrUri string = ""
 			if len(args) > 0 {
-				folder = args[0]
+				folderOrUri = args[0]
 			}
 			core.Rebuild(
-				folder, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
+				folderOrUri, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
 				cmdRebuildDryRun)
 		},
 	}
@@ -286,7 +286,7 @@ func main() {
 	var cmdListQuery string
 	var cmdListKey string
 	cmdList := &cobra.Command{
-		Use:     "list [folder]",
+		Use:     "list [folder|secret URI]",
 		Short:   "List secrets",
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -296,11 +296,11 @@ func main() {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			var folder string = ""
+			var folderOrUri string = ""
 			if len(args) > 0 {
-				folder = args[0]
+				folderOrUri = args[0]
 			}
-			core.List(folder, cmdListLong, cmdListQuery, cmdListKey)
+			core.List(folderOrUri, cmdListLong, cmdListQuery, cmdListKey)
 		},
 	}
 	cmdList.PersistentFlags().BoolVarP(

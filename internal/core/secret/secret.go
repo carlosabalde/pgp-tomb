@@ -1,10 +1,12 @@
 package secret
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -160,6 +162,68 @@ func (self *Secret) GetTemplate() *config.Template {
 	return nil
 }
 
+func (self *Secret) GetRecipients() (expected []string, unknown []string, rubbish []string, missing []string, e error) {
+	// Initializations.
+	expected = make([]string, 0)
+	current := make([]string, 0)
+	unknown = make([]string, 0)
+	rubbish = make([]string, 0)
+	missing = make([]string, 0)
+	e = nil
+
+	// Extract current recipients.
+	currentRecipientKeyIds, err := self.GetCurrentRecipientsKeyIds()
+	if err != nil {
+		e = errors.Wrap(err, "failed to determine current recipients")
+		return
+	}
+
+	// Determine current & unknown recipients.
+	for _, keyId := range currentRecipientKeyIds {
+		key := findPublicKeyByKeyId(keyId)
+		if key != nil {
+			current = append(current, key.Alias)
+		} else {
+			unknown = append(
+				unknown,
+				fmt.Sprintf("0x%x", keyId))
+		}
+	}
+	sort.Strings(unknown)
+
+	// Determine expected recipients.
+	if keys, err := self.GetExpectedPublicKeys(); err == nil {
+		for _, key := range keys {
+			expected = append(expected, key.Alias)
+		}
+		sort.Strings(expected)
+	} else {
+		e = errors.Wrap(err, "failed to determine expected recipients")
+		return
+	}
+
+	// Determine rubbish recipients.
+	if tmp, err := slices.Difference(current, expected); err == nil {
+		rubbish := tmp.Interface().([]string)
+		sort.Strings(rubbish)
+	} else {
+		e = errors.Wrap(err, "failed to determine rubbish recipients")
+		return
+	}
+
+	// Determine missing recipients.
+	if tmp, err := slices.Difference(expected, current); err == nil {
+		missing := tmp.Interface().([]string)
+		sort.Strings(missing)
+	} else {
+		e = errors.Wrap(err, "failed to determine missing recipients")
+		return
+	}
+
+	// Done!
+	return
+}
+
 // Implementation of 'query.Context' interface.
 func (self *Secret) GetIdentifier(key string) string {
 	if key == "uri" {
@@ -172,4 +236,18 @@ func (self *Secret) GetIdentifier(key string) string {
 		}
 	}
 	return ""
+}
+
+func findPublicKeyByKeyId(id uint64) *pgp.PublicKey {
+	for _, key := range config.GetPublicKeys() {
+		if key.Entity.PrimaryKey.KeyId == id {
+			return key
+		}
+		for _, subkey := range key.Entity.Subkeys {
+			if subkey.PublicKey.KeyId == id {
+				return key
+			}
+		}
+	}
+	return nil
 }
