@@ -17,7 +17,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func List(folderOrUri string, long bool, queryString, keyAlias string) {
+func List(folderOrUri string, long bool, queryString, keyAlias string, ignoreSchema bool) {
 	// Initializations.
 	queryParsed := parseQuery(queryString)
 
@@ -39,7 +39,7 @@ func List(folderOrUri string, long bool, queryString, keyAlias string) {
 			return err
 		}
 		if !info.IsDir() && filepath.Ext(path) == config.SecretExtension {
-			listSecret(path, long, queryParsed, key)
+			listSecret(path, long, queryParsed, key, ignoreSchema)
 		}
 		return nil
 	}
@@ -69,7 +69,7 @@ func List(folderOrUri string, long bool, queryString, keyAlias string) {
 	}
 }
 
-func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey) {
+func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey, ignoreSchema bool) {
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 	uri = strings.TrimSuffix(uri, config.SecretExtension)
@@ -110,11 +110,11 @@ func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey) {
 
 	fmt.Printf("- %s\n", s.GetUri())
 	if long {
-		renderSecretDetails(s)
+		renderSecretDetails(s, ignoreSchema)
 	}
 }
 
-func renderSecretDetails(s *secret.Secret) {
+func renderSecretDetails(s *secret.Secret, ignoreSchema bool) {
 	// Determine recipients.
 	expected, unknown, rubbish, missing, err := s.GetRecipients()
 	if err != nil {
@@ -160,16 +160,22 @@ func renderSecretDetails(s *secret.Secret) {
 	// Render template.
 	fmt.Print("  |-- template: ")
 	if template := s.GetTemplate(); template != nil {
-		decoration := "✓"
-		buffer := new(bytes.Buffer)
-		if err := s.Decrypt(buffer); err != nil {
-			decoration = "?"
-		} else {
-			loader := gojsonschema.NewStringLoader(buffer.String())
-			validation, err := template.Schema.Validate(loader)
-			if err != nil || !validation.Valid() {
-				decoration = "✗"
+		var decoration string
+		if !ignoreSchema {
+			buffer := new(bytes.Buffer)
+			if err := s.Decrypt(buffer); err != nil {
+				decoration = "?"
+			} else {
+				loader := gojsonschema.NewStringLoader(buffer.String())
+				validation, err := template.Schema.Validate(loader)
+				if err != nil || !validation.Valid() {
+					decoration = "✗"
+				} else {
+					decoration = "✓"
+				}
 			}
+		} else {
+			decoration = "?"
 		}
 		fmt.Printf("%s %s\n", template.Alias, decoration)
 	} else {

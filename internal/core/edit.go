@@ -14,7 +14,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
-func Edit(uri string, dropTags bool, tags []secret.Tag) {
+func Edit(uri string, dropTags bool, tags []secret.Tag, ignoreSchema bool) {
 	// Initialize output writer.
 	output, err := ioutil.TempFile("", "pgp-tomb-")
 	if err != nil {
@@ -79,7 +79,7 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 
 		// Check if secret needs to be updated.
 		if updateTags || digest != md5File(output.Name()) {
-			if set(uri, output.Name(), newTags) {
+			if set(uri, output.Name(), newTags, ignoreSchema) {
 				fmt.Println("Done!")
 				break
 			} else {

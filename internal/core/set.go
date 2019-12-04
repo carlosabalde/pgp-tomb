@@ -12,14 +12,14 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
-func Set(uri, inputPath string, tags []secret.Tag) {
-	if !set(uri, inputPath, tags) {
+func Set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) {
+	if !set(uri, inputPath, tags, ignoreSchema) {
 		os.Exit(1)
 	}
 	fmt.Println("Done!")
 }
 
-func set(uri, inputPath string, tags []secret.Tag) bool {
+func set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) bool {
 	// Initializations.
 	s := secret.New(uri)
 	s.SetTags(tags)
@@ -42,7 +42,7 @@ func set(uri, inputPath string, tags []secret.Tag) bool {
 	}
 
 	// Check template?
-	if template := s.GetTemplate(); template != nil {
+	if template := s.GetTemplate(); template != nil && !ignoreSchema {
 		buffer := new(bytes.Buffer)
 		if _, err := io.Copy(buffer, input); err != nil {
 			logrus.WithFields(logrus.Fields{
