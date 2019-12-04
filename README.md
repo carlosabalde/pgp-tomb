@@ -89,19 +89,19 @@ SETUP
 
    # Create a new secret using an editor (you can choose your preferred editor
    # using the EDITOR environment variable).
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml edit foo/answers.md
+   $ pgp-agent edit foo/answers.md
 
    # Copy contents of a secret to the system clipboard (depends on 'xsel'
    # or 'xclip' in Linux systems).
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml get foo/answers.md --copy
+   $ pgp-agent get foo/answers.md --copy
 
    # List URIs of secrets theoretically readable by 'chuck' according with the
    # permissions defined in the current configuration.
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml list --key chuck
+   $ pgp-agent list --long --key chuck
 
    # Check all secrets and re-encrypt them if current recipients don't match
    # the list of expected recipients according with the current configuration.
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml rebuild
+   $ pgp-agent rebuild
    ```
 
 DEVELOPMENT
