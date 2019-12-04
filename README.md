@@ -18,7 +18,11 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); (3) the folder containing the templates (`.schema` and `.skeleton` extensions are required); and (4) the folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders:
+   1. The PGP Tomb configuration file.
+   2. The folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring).
+   3. The folder containing the templates (`.schema` and `.skeleton` extensions are required).
+   4. The folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
    |-- keys/
@@ -31,7 +35,10 @@ SETUP
    `-- secrets/   
    ```
 
-3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration). Templates are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
+3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
+   - Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
+   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration). 
+   - Templates (i.e. JSON Schema and/or JSON / YAML skeletons) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
    root: /home/carlos/pgp-tomb
 
