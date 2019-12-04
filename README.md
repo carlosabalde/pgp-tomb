@@ -1,14 +1,14 @@
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
-- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted & gzipped using one or more public keys (i.e. recipients).
+- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as **binary PGP files encrypted & gzipped using one or more public keys** (i.e. recipients).
 
-- Secrets can be tagged using an unlimited number of (name, value) pairs stored as unencrypted meta-information of the gzipped file.
+- Secrets can be **tagged using an unlimited number of (name, value) pairs** stored as unencrypted meta-information of the gzipped file.
 
-- A flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
+- A **flexible permissions model is provided in order to allow sharing secrets in multi-user environments**. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
 
-- A flexible JSON Schema based templating model is provided in order to enforce formatting of JSON / YAML secrets and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
+- A **flexible JSON Schema based templating model is provided in order to enforce formatting of JSON / YAML secrets** and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
 
-- Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys.
+- Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to **seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys**.
 
 SETUP
 =====
