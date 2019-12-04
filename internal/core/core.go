@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 
@@ -36,12 +37,17 @@ func parseQuery(queryString string) (result query.Query) {
 func validateSchema(value string, schema *gojsonschema.Schema) (bool, []string) {
 	errors := make([]string, 0)
 
-	loader := gojsonschema.NewStringLoader(value)
+	jsonValue, err := yaml.YAMLToJSON([]byte(value))
+	if err != nil {
+		return false, errors
+	}
+
+	loader := gojsonschema.NewStringLoader(string(jsonValue))
 	validation, err := schema.Validate(loader)
 	if err != nil || !validation.Valid() {
 		if err == nil {
 			for _, err := range validation.Errors() {
-				errors = append(errors, err.Description())
+				errors = append(errors, err.String())
 			}
 		}
 		return false, errors

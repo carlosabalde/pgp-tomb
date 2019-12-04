@@ -6,7 +6,7 @@
 
 - A flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
 
-- A flexible JSON Schema based templating model is provided in order to enforce formatting of JSON secrets and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
+- A flexible JSON Schema based templating model is provided in order to enforce formatting of YAML secrets and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
 
 - Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys.
 

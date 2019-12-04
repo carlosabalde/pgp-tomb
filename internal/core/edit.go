@@ -60,11 +60,11 @@ func Edit(uri string, dropTags bool, tags []secret.Tag, ignoreSchema bool) {
 		newTags = s.GetTags()
 	}
 
+	// Compute initial digest.
+	digest := md5File(output.Name())
+
 	// Avoid loosing edited changes.
 	for {
-		// Compute initial digest.
-		digest := md5File(output.Name())
-
 		// Open decrypted secret / initial skeleton in an external editor.
 		cmd := exec.Command(config.GetEditor(), output.Name())
 		cmd.Stdin = os.Stdin
