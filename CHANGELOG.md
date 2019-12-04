@@ -1,4 +1,6 @@
-- v0.2.4 (?):
+- v0.3.1 (?):
+
+- v0.3.0 (2019-12-04):
     + Add support for templates (i.e. schemas + skeletons).
 
 - v0.2.3 (2019-12-03):
