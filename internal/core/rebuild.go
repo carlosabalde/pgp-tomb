@@ -92,17 +92,15 @@ func checkFile(
 		}
 
 		if q.Eval(s) {
-			task := func() string {
+			tasksChannel <- func() string {
 				return checkSecret(s, force, dryRun)
 			}
-			tasksChannel <- task
 			return true
 		}
 	} else {
-		task := func() string {
+		tasksChannel <- func() string {
 			return checkUnexpectFile(path, dryRun)
 		}
-		tasksChannel <- task
 		return true
 	}
 

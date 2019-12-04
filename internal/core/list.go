@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
@@ -166,9 +165,7 @@ func renderSecretDetails(s *secret.Secret, ignoreSchema bool) {
 			if err := s.Decrypt(buffer); err != nil {
 				decoration = "?"
 			} else {
-				loader := gojsonschema.NewStringLoader(buffer.String())
-				validation, err := template.Schema.Validate(loader)
-				if err != nil || !validation.Valid() {
+				if valid, _ := validateSchema(buffer.String(), template.Schema); !valid {
 					decoration = "✗"
 				} else {
 					decoration = "✓"

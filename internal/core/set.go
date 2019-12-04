@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
@@ -51,14 +50,10 @@ func set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) bool {
 			return false
 		}
 
-		loader := gojsonschema.NewStringLoader(buffer.String())
-		validation, err := template.Schema.Validate(loader)
-		if err != nil || !validation.Valid() {
-			fmt.Fprintf(os.Stderr, "Secret does not match '%s' template!\n", template.Alias)
-			if err == nil {
-				for _, err := range validation.Errors() {
-					fmt.Fprintf(os.Stderr, "  - %s\n", err)
-				}
+		if valid, errs := validateSchema(buffer.String(), template.Schema); !valid {
+			fmt.Fprintf(os.Stderr, "Secret does not match '%s' schema!\n", template.Alias)
+			for _, err := range errs {
+				fmt.Fprintf(os.Stderr, "  - %s\n", err)
 			}
 			return false
 		}

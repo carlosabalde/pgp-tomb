@@ -255,7 +255,7 @@ func main() {
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
-		Use:   "rebuild [folder|secret URI]",
+		Use:   "rebuild [<folder>|<secret URI<]",
 		Short: "Rebuild / check secrets",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
@@ -295,7 +295,7 @@ func main() {
 	var cmdListKey string
 	var cmdListIgnoreSchema bool
 	cmdList := &cobra.Command{
-		Use:     "list [folder|secret URI]",
+		Use:     "list [<folder>|<secret URI>]",
 		Short:   "List secrets",
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {

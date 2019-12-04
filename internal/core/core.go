@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
@@ -30,4 +31,21 @@ func parseQuery(queryString string) (result query.Query) {
 		result = query.True
 	}
 	return
+}
+
+func validateSchema(value string, schema *gojsonschema.Schema) (bool, []string) {
+	errors := make([]string, 0)
+
+	loader := gojsonschema.NewStringLoader(value)
+	validation, err := schema.Validate(loader)
+	if err != nil || !validation.Valid() {
+		if err == nil {
+			for _, err := range validation.Errors() {
+				errors = append(errors, err.Description())
+			}
+		}
+		return false, errors
+	}
+
+	return true, errors
 }
