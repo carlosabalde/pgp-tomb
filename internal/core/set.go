@@ -41,7 +41,7 @@ func set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) bool {
 	}
 
 	// Check template?
-	if template := s.GetTemplate(); template != nil && !ignoreSchema {
+	if template := s.GetTemplate(); template != nil && template.Schema != nil && !ignoreSchema {
 		buffer := new(bytes.Buffer)
 		if _, err := io.Copy(buffer, input); err != nil {
 			logrus.WithFields(logrus.Fields{

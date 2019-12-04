@@ -158,7 +158,7 @@ func renderSecretDetails(s *secret.Secret, ignoreSchema bool) {
 
 	// Render template.
 	fmt.Print("  |-- template: ")
-	if template := s.GetTemplate(); template != nil {
+	if template := s.GetTemplate(); template != nil && template.Schema != nil {
 		var decoration string
 		if !ignoreSchema {
 			buffer := new(bytes.Buffer)

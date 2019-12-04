@@ -34,3 +34,5 @@ permissions:
 
 templates:
   - uri ~ '\.login$': login
+
+  - uri ~ '\.host$': host

@@ -1,5 +1,5 @@
 - v0.2.4 (?):
-    + ...
+    + Add support for templates (i.e. schemas + skeletons).
 
 - v0.2.3 (2019-12-03):
     + Fix edition when creating new secrets without tags
