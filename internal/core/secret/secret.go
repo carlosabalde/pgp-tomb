@@ -1,10 +1,12 @@
 package secret
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -106,39 +108,32 @@ func (self *Secret) Decrypt(output io.Writer) error {
 }
 
 func (self *Secret) GetExpectedPublicKeys() ([]*pgp.PublicKey, error) {
-	// Build list of key aliases according to the configured permissions &
-	// keepers.
-	permissions := config.GetPermissions()
-	aliases := make([]string, 0)
-	for _, permission := range permissions {
-		if permission.Query.Eval(self) {
-			for _, expression := range permission.Expressions {
+	result := make([]*pgp.PublicKey, 0)
+
+	for _, rule := range config.GetPermissionRules() {
+		if rule.Query.Eval(self) {
+			for _, expression := range rule.Expressions {
 				var tmp reflect.Value
 				var err error
 				if expression.Deny {
-					tmp, err = slices.Difference(aliases, expression.Keys)
+					tmp, err = slices.Difference(result, expression.Keys)
 				} else {
-					tmp, err = slices.Union(aliases, expression.Keys)
+					tmp, err = slices.Union(result, expression.Keys)
 				}
 				if err != nil {
 					return nil, errors.Wrap(err, "unexpected error")
 				}
-				aliases = tmp.Interface().([]string)
+				result = tmp.Interface().([]*pgp.PublicKey)
 			}
 		}
 	}
-	tmp, err := slices.Union(aliases, config.GetKeepers())
+
+	tmp, err := slices.Union(result, config.GetKeepers())
 	if err != nil {
 		return nil, errors.Wrap(err, "unexpected error")
 	}
-	aliases = tmp.Interface().([]string)
+	result = tmp.Interface().([]*pgp.PublicKey)
 
-	// Expand key aliases to full 'pgp.PublicKey' instances.
-	keys := config.GetPublicKeys()
-	result := make([]*pgp.PublicKey, len(aliases))
-	for i, alias := range aliases {
-		result[i] = keys[alias]
-	}
 	return result, nil
 }
 
@@ -157,6 +152,78 @@ func (self *Secret) GetCurrentRecipientsKeyIds() ([]uint64, error) {
 	return ids, nil
 }
 
+func (self *Secret) GetTemplate() *config.Template {
+	for _, rule := range config.GetTemplateRules() {
+		if rule.Query.Eval(self) {
+			return rule.Template
+		}
+	}
+
+	return nil
+}
+
+func (self *Secret) GetRecipients() (expected, unknown, rubbish, missing []string, e error) {
+	// Initializations.
+	expected = make([]string, 0)
+	current := make([]string, 0)
+	unknown = make([]string, 0)
+	rubbish = make([]string, 0)
+	missing = make([]string, 0)
+	e = nil
+
+	// Extract current recipients.
+	currentRecipientKeyIds, err := self.GetCurrentRecipientsKeyIds()
+	if err != nil {
+		e = errors.Wrap(err, "failed to determine current recipients")
+		return
+	}
+
+	// Determine current & unknown recipients.
+	for _, keyId := range currentRecipientKeyIds {
+		key := findPublicKeyByKeyId(keyId)
+		if key != nil {
+			current = append(current, key.Alias)
+		} else {
+			unknown = append(
+				unknown,
+				fmt.Sprintf("0x%x", keyId))
+		}
+	}
+	sort.Strings(unknown)
+
+	// Determine expected recipients.
+	if keys, err := self.GetExpectedPublicKeys(); err == nil {
+		for _, key := range keys {
+			expected = append(expected, key.Alias)
+		}
+		sort.Strings(expected)
+	} else {
+		e = errors.Wrap(err, "failed to determine expected recipients")
+		return
+	}
+
+	// Determine rubbish recipients.
+	if tmp, err := slices.Difference(current, expected); err == nil {
+		rubbish := tmp.Interface().([]string)
+		sort.Strings(rubbish)
+	} else {
+		e = errors.Wrap(err, "failed to determine rubbish recipients")
+		return
+	}
+
+	// Determine missing recipients.
+	if tmp, err := slices.Difference(expected, current); err == nil {
+		missing := tmp.Interface().([]string)
+		sort.Strings(missing)
+	} else {
+		e = errors.Wrap(err, "failed to determine missing recipients")
+		return
+	}
+
+	// Done!
+	return
+}
+
 // Implementation of 'query.Context' interface.
 func (self *Secret) GetIdentifier(key string) string {
 	if key == "uri" {
@@ -169,4 +236,18 @@ func (self *Secret) GetIdentifier(key string) string {
 		}
 	}
 	return ""
+}
+
+func findPublicKeyByKeyId(id uint64) *pgp.PublicKey {
+	for _, key := range config.GetPublicKeys() {
+		if key.Entity.PrimaryKey.KeyId == id {
+			return key
+		}
+		for _, subkey := range key.Entity.Subkeys {
+			if subkey.PublicKey.KeyId == id {
+				return key
+			}
+		}
+	}
+	return nil
 }

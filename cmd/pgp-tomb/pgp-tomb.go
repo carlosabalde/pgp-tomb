@@ -38,21 +38,21 @@ __pgp-tomb_complete_secret_uri() {
 	fi
 
 	if [ ! -z "$secrets" ]; then
-		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.secret' -- "$cur"))
+		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*` + config.SecretExtension + `' -- "$cur"))
 
 		if [ "${#COMPREPLY[@]}" == "1" ]; then
 			if [ -d "$secrets/$COMPREPLY" ]; then
 				LASTCHAR=/
 				COMPREPLY=$(printf %q%s "$COMPREPLY" "$LASTCHAR")
 			elif [ -f "$secrets/$COMPREPLY" ]; then
-				COMPREPLY=$(printf %q "${COMPREPLY%.secret}")
+				COMPREPLY=$(printf %q "${COMPREPLY%` + config.SecretExtension + `}")
 			fi
 		else
 			for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
 				[ -d "$secrets/${COMPREPLY[$i]}" ] && \
 					COMPREPLY[$i]=${COMPREPLY[$i]}/
 				[ -f "$secrets/${COMPREPLY[$i]}" ] && \
-					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.secret}")
+					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%` + config.SecretExtension + `}")
 			done
 		fi
 	else
@@ -186,6 +186,7 @@ func main() {
 	// 'set' command.
 	var cmdSetFile string
 	var cmdSetTags []string
+	var cmdSetIgnoreSchema bool
 	cmdSet := &cobra.Command{
 		Use:     "set <secret URI>",
 		Aliases: []string{"add", "insert"},
@@ -202,7 +203,7 @@ func main() {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Set(args[0], cmdSetFile, parseTags(cmdSetTags))
+			core.Set(args[0], cmdSetFile, parseTags(cmdSetTags), cmdSetIgnoreSchema)
 		},
 	}
 	cmdSet.PersistentFlags().StringVarP(
@@ -211,10 +212,14 @@ func main() {
 	cmdSet.PersistentFlags().StringArrayVar(
 		&cmdSetTags, "tag", nil,
 		"tag secret using 'name: value' pair")
+	cmdSet.PersistentFlags().BoolVar(
+		&cmdSetIgnoreSchema, "ignore-schema", false,
+		"skip schema validation")
 
 	// 'edit' command.
 	var cmdEditDropTags bool
 	var cmdEditTags []string
+	var cmdEditIgnoreSchema bool
 	cmdEdit := &cobra.Command{
 		Use:   "edit <secret URI>",
 		Short: "Edit secret using your preferred editor (defaults to $EDITOR)",
@@ -231,7 +236,7 @@ func main() {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			tags := parseTags(cmdEditTags)
-			core.Edit(args[0], cmdEditDropTags || len(tags) > 0, tags)
+			core.Edit(args[0], cmdEditDropTags || len(tags) > 0, tags, cmdEditIgnoreSchema)
 		},
 	}
 	cmdEdit.PersistentFlags().BoolVar(
@@ -240,6 +245,9 @@ func main() {
 	cmdEdit.PersistentFlags().StringArrayVar(
 		&cmdEditTags, "tag", nil,
 		"tag secret using 'name: value' pair")
+	cmdEdit.PersistentFlags().BoolVar(
+		&cmdEditIgnoreSchema, "ignore-schema", false,
+		"skip schema validation")
 
 	// 'rebuild' command.
 	var cmdRebuildQuery string
@@ -247,11 +255,11 @@ func main() {
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
 	cmdRebuild := &cobra.Command{
-		Use:   "rebuild [folder]",
+		Use:   "rebuild [<folder>|<secret URI<]",
 		Short: "Rebuild / check secrets",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
-				return errors.New("rebuilding multiple folders is not supported")
+				return errors.New("rebuilding multiple folders / URIs is not supported")
 			}
 			if cmdRebuildWorkers < 1 {
 				return errors.New("at least one worker is needed")
@@ -259,12 +267,12 @@ func main() {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			var folder string = ""
+			var folderOrUri string = ""
 			if len(args) > 0 {
-				folder = args[0]
+				folderOrUri = args[0]
 			}
 			core.Rebuild(
-				folder, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
+				folderOrUri, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
 				cmdRebuildDryRun)
 		},
 	}
@@ -285,33 +293,39 @@ func main() {
 	var cmdListLong bool
 	var cmdListQuery string
 	var cmdListKey string
+	var cmdListIgnoreSchema bool
 	cmdList := &cobra.Command{
-		Use:     "list [folder]",
+		Use:     "list [<folder>|<secret URI>]",
 		Short:   "List secrets",
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
-				return errors.New("listing multiple folders is not supported")
+				return errors.New("listing multiple folders / URIs is not supported")
 			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			var folder string = ""
+			var folderOrUri string = ""
 			if len(args) > 0 {
-				folder = args[0]
+				folderOrUri = args[0]
 			}
-			core.List(folder, cmdListLong, cmdListQuery, cmdListKey)
+			core.List(
+				folderOrUri, cmdListLong, cmdListQuery, cmdListKey,
+				cmdListIgnoreSchema)
 		},
 	}
 	cmdList.PersistentFlags().BoolVarP(
 		&cmdListLong, "long", "l", false,
-		"list using the long format")
+		"list using the long format (requires decryption for schema validation)")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListQuery, "query", "",
 		"limit listing to secrets matching this query")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListKey, "key", "",
 		"list only secrets readable by this key alias")
+	cmdList.PersistentFlags().BoolVar(
+		&cmdListIgnoreSchema, "ignore-schema", false,
+		"skip schema validation")
 
 	// 'bash' command.
 	cmdBash := &cobra.Command{

@@ -1,7 +1,7 @@
 FROM golang:1.13
 
 RUN apt-get update -y && \
-    apt-get install -y less bash-completion git gpg gpg-agent nano vim xsel zsh
+    apt-get install -y less bash-completion git gpg gpg-agent jq nano vim xsel zsh
 
 COPY files/keys/alice.pri /root
 RUN gpg --batch --yes --passphrase 's3cr3t' --import /root/alice.pri && \

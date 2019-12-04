@@ -1,12 +1,14 @@
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
-- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as binary PGP files encrypted & gzipped using one or more public keys (i.e. recipients).
+- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as **binary PGP files encrypted & gzipped using one or more public keys** (i.e. recipients).
 
-- Secrets can be tagged using an unlimited number of (name, value) pairs stored as unencrypted meta-information of the gzipped file.
+- Secrets can be **tagged using an unlimited number of (name, value) pairs** stored as unencrypted meta-information of the gzipped file.
 
-- A simple yet flexible permissions model is provided in order to allow sharing secrets in multi-user environments. Public PGP keys can be organized in teams and access to each secret can be easily restricted to one or more teams and / or individual users. It's up to you how to share the secrets across the organization: a git repository, a shared folder, etc.
+- A **flexible permissions model is provided in order to allow sharing secrets in multi-user environments**. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
 
-- Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys.
+- A **flexible JSON Schema based templating model is provided in order to enforce formatting of JSON / YAML secrets** and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
+
+- Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to **seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys**.
 
 SETUP
 =====
@@ -16,17 +18,27 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders: (1) the PGP Tomb configuration file; (2) the folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring); and (3) the folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders:
+   1. The PGP Tomb configuration file.
+   2. The folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring).
+   3. The folder containing the templates (`.schema` and `.skeleton` extensions are required).
+   4. The folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
    |-- keys/
    |   |-- alice.pub
    |   |-- bob.pub
    |   `-- chuck.pub
+   |-- templates/
+   |   |-- login.skeleton
+   |   `-- login.schema
    `-- secrets/   
    ```
 
-3. Except for permissions, the PGP Tomb configuration is simple and self-explanatory. Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each query in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the pattern matching continues. Obviously order is relevant both for queries as well as for expressions associated to each query. Users in the list of keepers will always be part of the list of recipients (and a least one keeper is required in a valid configuration).
+3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
+   - Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
+   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration). 
+   - Templates (i.e. JSON Schema and/or JSON / YAML skeletons) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
    root: /home/carlos/pgp-tomb
 
@@ -47,6 +59,9 @@ SETUP
      - uri ~ '^foo/bar/' && tags.type != 'acme':
          - -bob
          - +team-2
+
+   templates:
+     - uri ~ '\.login$': login
    ```
 
 4. Optionally you can configure Bash or Zsh completions. For example, for Bash adjust your `.bashrc` as follows.
@@ -115,7 +130,7 @@ Running `make docker` you can build & connect to a handy Docker container useful
   ssb   rsa1024 2019-11-23 [SEA] [expires: 2027-11-21]
   ```
 
-- Some encrypted test files can be found in `/mnt/files/secrets/`.
+- Some encrypted test files and templates can be found in `/mnt/files/secrets/` and `/mnt/files/templates/` respectively.
   ```
   # zcat /mnt/files/secrets/foo/bar/lorem\ ipsum.txt.secret | gpg --use-agent -d
   ```

@@ -14,24 +14,24 @@ type PublicKey struct {
 	Entity *openpgp.Entity
 }
 
-func LoadASCIIArmoredPublicKey(alias string, input io.Reader) (*PublicKey, error) {
+func LoadASCIIArmoredPublicKey(alias string, input io.Reader) (PublicKey, error) {
 	block, err := armor.Decode(input)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode ASCII armor of key '%s'", alias)
+		return PublicKey{}, errors.Wrapf(err, "failed to decode ASCII armor of key '%s'", alias)
 	}
 
 	if block.Type != openpgp.PublicKeyType {
-		return nil, errors.Errorf("invalid public key '%s'", alias)
+		return PublicKey{}, errors.Errorf("invalid public key '%s'", alias)
 	}
 
 	reader := packet.NewReader(block.Body)
 
 	entity, err := openpgp.ReadEntity(reader)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create entity from public key '%s'", alias)
+		return PublicKey{}, errors.Wrapf(err, "failed to create entity from public key '%s'", alias)
 	}
 
-	return &PublicKey{alias, entity}, nil
+	return PublicKey{alias, entity}, nil
 }
 
 func GetRecipientKeyIdsForEncryptedMessage(input io.Reader) ([]uint64, error) {

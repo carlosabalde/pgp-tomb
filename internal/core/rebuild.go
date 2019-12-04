@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -15,37 +14,12 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/maps"
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(folder, queryString string, workers int, force, dryRun bool) {
-	// Initialize counter.
+func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
+	// Initializations.
 	checked := 0
-
-	// Initialize query.
-	var queryParsed query.Query
-	if queryString != "" {
-		var err error
-		queryParsed, err = query.Parse(queryString)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"query": queryString,
-				"error": err,
-			}).Fatal("Failed to parse query!")
-		}
-	} else {
-		queryParsed = query.True
-	}
-
-	// Check folder.
-	root := path.Join(config.GetSecretsRoot(), folder)
-	if folder != "" {
-		if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
-			fmt.Fprintln(os.Stderr, "Folder does not exist!")
-			os.Exit(1)
-		}
-	}
+	queryParsed := parseQuery(queryString)
 
 	// Launch workers.
 	var waitGroup sync.WaitGroup
@@ -55,23 +29,41 @@ func Rebuild(folder, queryString string, workers int, force, dryRun bool) {
 		go taskDispatcher(tasksChannel, &waitGroup)
 	}
 
-	// Walk file system.
-	if err := filepath.Walk(
-		root,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
+	// Define walk function.
+	walk := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			if checkFile(path, info, tasksChannel, queryParsed, force, dryRun) {
+				checked++
 			}
-			if !info.IsDir() {
-				if checkFile(path, info, tasksChannel, queryParsed, force, dryRun) {
-					checked++
-				}
+		}
+		return nil
+	}
+
+	// Check folder vs. URI & walk file system.
+	root := ""
+	if folderOrUri != "" {
+		item := path.Join(config.GetSecretsRoot(), folderOrUri+config.SecretExtension)
+		if info, err := os.Stat(item); err == nil && !info.IsDir() {
+			walk(item, info, err)
+		} else {
+			root = path.Join(config.GetSecretsRoot(), folderOrUri)
+			if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
+				fmt.Fprintln(os.Stderr, "Folder does not exist!")
+				os.Exit(1)
 			}
-			return nil
-		}); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Fatal("Failed to rebuild secrets!")
+		}
+	} else {
+		root = config.GetSecretsRoot()
+	}
+	if root != "" {
+		if err := filepath.Walk(root, walk); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Fatal("Failed to rebuild secrets!")
+		}
 	}
 
 	// Wait for completion.
@@ -100,17 +92,15 @@ func checkFile(
 		}
 
 		if q.Eval(s) {
-			task := func() string {
+			tasksChannel <- func() string {
 				return checkSecret(s, force, dryRun)
 			}
-			tasksChannel <- task
 			return true
 		}
 	} else {
-		task := func() string {
+		tasksChannel <- func() string {
 			return checkUnexpectFile(path, dryRun)
 		}
-		tasksChannel <- task
 		return true
 	}
 
@@ -128,8 +118,8 @@ func taskDispatcher(tasksChannel <-chan func() string, waitGroup *sync.WaitGroup
 }
 
 func checkSecret(s *secret.Secret, force, dryRun bool) string {
-	// Extract current recipients.
-	currentRecipientKeyIds, err := s.GetCurrentRecipientsKeyIds()
+	// Determine recipients.
+	_, unknown, rubbish, missing, err := s.GetRecipients()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
@@ -138,52 +128,21 @@ func checkSecret(s *secret.Secret, force, dryRun bool) string {
 		return fmt.Sprintf("! Failed to determine recipients for '%s'", s.GetUri())
 	}
 
-	// Determine expected recipients.
-	expectedKeys, err := s.GetExpectedPublicKeys()
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"uri":   s.GetUri(),
-		}).Error("Failed to determine expected public keys!")
-		return fmt.Sprintf("! Failed to determine expected public keys for '%s'", s.GetUri())
-	}
-
-	// Check current recipients.
+	// Check recipients.
 	result := ""
-	expectedKeysByAlias := make(map[string]*pgp.PublicKey)
-	for _, key := range expectedKeys {
-		expectedKeysByAlias[key.Alias] = key
-	}
-	for _, keyId := range currentRecipientKeyIds {
-		key := findPublicKeyByKeyId(keyId)
-		if key != nil {
-			if _, found := expectedKeysByAlias[key.Alias]; !found {
-				result = fmt.Sprintf(
-					"- Re-encrypting '%s': rubbish recipients (%s, etc.)...",
-					s.GetUri(), key.Alias)
-				break
-			} else {
-				delete(expectedKeysByAlias, key.Alias)
-			}
-		} else {
-			result = fmt.Sprintf(
-				"- Re-encrypting '%s': unknown rubbish recipients (0x%x, etc.)...",
-				s.GetUri(), keyId)
-			break
-		}
-	}
-	if result == "" && len(expectedKeysByAlias) > 0 {
-		res, err := maps.KeysSlice(expectedKeysByAlias)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-		keysAliases := res.Interface().([]string)
-		sort.Strings(keysAliases)
+	if len(unknown) > 0 {
+		result = fmt.Sprintf(
+			"- Re-encrypting '%s': unknown recipients (%s)...",
+			s.GetUri(), strings.Join(unknown, ", "))
+	} else if len(rubbish) > 0 {
+		result = fmt.Sprintf(
+			"- Re-encrypting '%s': rubbish recipients (%s)...",
+			s.GetUri(), strings.Join(rubbish, ", "))
+	} else if len(missing) > 0 {
 		result = fmt.Sprintf(
 			"- Re-encrypting '%s': missing recipients (%s)...",
-			s.GetUri(), strings.Join(keysAliases, ", "))
-	}
-	if result == "" && force {
+			s.GetUri(), strings.Join(missing, ", "))
+	} else if force {
 		result = fmt.Sprintf("- Re-encrypting '%s': forced...", s.GetUri())
 	}
 

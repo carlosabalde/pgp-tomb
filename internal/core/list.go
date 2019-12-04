@@ -1,11 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -14,24 +14,11 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
-	"github.com/carlosabalde/pgp-tomb/internal/helpers/slices"
 )
 
-func List(folder string, long bool, queryString, keyAlias string) {
-	// Initialize query.
-	var queryParsed query.Query
-	if queryString != "" {
-		var err error
-		queryParsed, err = query.Parse(queryString)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"query": queryString,
-				"error": err,
-			}).Fatal("Failed to parse query!")
-		}
-	} else {
-		queryParsed = query.True
-	}
+func List(folderOrUri string, long bool, queryString, keyAlias string, ignoreSchema bool) {
+	// Initializations.
+	queryParsed := parseQuery(queryString)
 
 	// Initialize key.
 	var key *pgp.PublicKey
@@ -45,34 +32,43 @@ func List(folder string, long bool, queryString, keyAlias string) {
 		key = nil
 	}
 
-	// Check folder.
-	root := path.Join(config.GetSecretsRoot(), folder)
-	if folder != "" {
-		if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
-			fmt.Fprintln(os.Stderr, "Folder does not exist!")
-			os.Exit(1)
+	// Define walk function.
+	walk := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
+		if !info.IsDir() && filepath.Ext(path) == config.SecretExtension {
+			listSecret(path, long, queryParsed, key, ignoreSchema)
+		}
+		return nil
 	}
 
-	// Walk file system.
-	if err := filepath.Walk(
-		root,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
+	// Check folder vs. URI & walk file system.
+	root := ""
+	if folderOrUri != "" {
+		item := path.Join(config.GetSecretsRoot(), folderOrUri+config.SecretExtension)
+		if info, err := os.Stat(item); err == nil && !info.IsDir() {
+			walk(item, info, err)
+		} else {
+			root = path.Join(config.GetSecretsRoot(), folderOrUri)
+			if info, err := os.Stat(root); os.IsNotExist(err) || !info.IsDir() {
+				fmt.Fprintln(os.Stderr, "Folder does not exist!")
+				os.Exit(1)
 			}
-			if !info.IsDir() && filepath.Ext(path) == config.SecretExtension {
-				listSecret(path, long, queryParsed, key)
-			}
-			return nil
-		}); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Fatal("Failed to list secrets!")
+		}
+	} else {
+		root = config.GetSecretsRoot()
+	}
+	if root != "" {
+		if err := filepath.Walk(root, walk); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Fatal("Failed to list secrets!")
+		}
 	}
 }
 
-func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey) {
+func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey, ignoreSchema bool) {
 	uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 	uri = strings.TrimPrefix(uri, string(os.PathSeparator))
 	uri = strings.TrimSuffix(uri, config.SecretExtension)
@@ -113,102 +109,85 @@ func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey) {
 
 	fmt.Printf("- %s\n", s.GetUri())
 	if long {
-		renderSecretDetails(s)
+		renderSecretDetails(s, ignoreSchema)
 	}
 }
 
-func renderSecretDetails(s *secret.Secret) {
-	// Extract current recipients.
-	currentRecipientKeyIds, err := s.GetCurrentRecipientsKeyIds()
+func renderSecretDetails(s *secret.Secret, ignoreSchema bool) {
+	// Determine recipients.
+	expected, unknown, rubbish, missing, err := s.GetRecipients()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"uri":   s.GetUri(),
-		}).Error("Failed to determine current recipients!")
-		return
-	}
-
-	// Determine current & unknown recipients.
-	currentAliases := make([]string, 0)
-	unknownRecipients := make([]string, 0)
-	for _, keyId := range currentRecipientKeyIds {
-		key := findPublicKeyByKeyId(keyId)
-		if key != nil {
-			currentAliases = append(currentAliases, key.Alias)
-		} else {
-			unknownRecipients = append(
-				unknownRecipients,
-				fmt.Sprintf("0x%x", keyId))
-		}
-	}
-
-	// Determine expected recipients.
-	expectedAliases := make([]string, 0)
-	if keys, err := s.GetExpectedPublicKeys(); err == nil {
-		for _, key := range keys {
-			expectedAliases = append(expectedAliases, key.Alias)
-		}
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-			"uri":   s.GetUri(),
-		}).Error("Failed to determine expected recipients!")
+		}).Error("Failed to determine recipients!")
 		return
 	}
 
 	// Render expected recipients.
-	sort.Strings(expectedAliases)
-	fmt.Printf(
-		"  + recipients: %s\n",
-		strings.Join(expectedAliases, ", "))
-
-	// Render unknown recipients?
-	if len(unknownRecipients) > 0 {
-		sort.Strings(unknownRecipients)
-		fmt.Printf(
-			"    * unknown : %s\n",
-			strings.Join(unknownRecipients, ", "))
+	fmt.Print("  |-- recipients: ")
+	if len(expected) > 0 {
+		fmt.Println(strings.Join(expected, ", "))
+	} else {
+		fmt.Println("-")
 	}
 
-	// Render rubbish recipients?
-	tmpCurrentAliases, errCurrentAliases := slices.Difference(
-		currentAliases, expectedAliases)
-	if errCurrentAliases != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": errCurrentAliases,
-			"uri":   s.GetUri(),
-		}).Error("Failed to determine rubbish recipients!")
-		return
-	}
-	rubbishRecipients := tmpCurrentAliases.Interface().([]string)
-	if len(rubbishRecipients) > 0 {
-		sort.Strings(rubbishRecipients)
-		fmt.Printf(
-			"    * rubbish: %s\n",
-			strings.Join(rubbishRecipients, ", "))
+	// Render unknown recipients.
+	fmt.Print("  |   |-- unknown: ")
+	if len(unknown) > 0 {
+		fmt.Println(strings.Join(unknown, ", "))
+	} else {
+		fmt.Println("-")
 	}
 
-	// Render missing recipients?
-	tmpExpectedAliases, errExpectedAliases := slices.Difference(
-		expectedAliases, currentAliases)
-	if errExpectedAliases != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": errExpectedAliases,
-			"uri":   s.GetUri(),
-		}).Error("Failed to determine missing recipients!")
-		return
+	// Render rubbish recipients.
+	fmt.Print("  |   |-- rubbish: ")
+	if len(rubbish) > 0 {
+		fmt.Println(strings.Join(rubbish, ", "))
+	} else {
+		fmt.Println("-")
 	}
-	missingRecipients := tmpExpectedAliases.Interface().([]string)
-	if len(missingRecipients) > 0 {
-		sort.Strings(missingRecipients)
-		fmt.Printf(
-			"    * missing: %s\n",
-			strings.Join(missingRecipients, ", "))
+
+	// Render missing recipients.
+	fmt.Print("  |   `-- missing: ")
+	if len(missing) > 0 {
+		fmt.Println(strings.Join(missing, ", "))
+	} else {
+		fmt.Println("-")
+	}
+
+	// Render template.
+	fmt.Print("  |-- template: ")
+	if template := s.GetTemplate(); template != nil && template.Schema != nil {
+		var decoration string
+		if !ignoreSchema {
+			buffer := new(bytes.Buffer)
+			if err := s.Decrypt(buffer); err != nil {
+				decoration = "?"
+			} else {
+				if valid, _ := validateSchema(buffer.String(), template.Schema); !valid {
+					decoration = "✗"
+				} else {
+					decoration = "✓"
+				}
+			}
+		} else {
+			decoration = "?"
+		}
+		fmt.Printf("%s %s\n", template.Alias, decoration)
+	} else {
+		fmt.Println("-")
 	}
 
 	// Render tags.
-	for _, tag := range s.GetTags() {
-		fmt.Printf("  + tags.%s: %s\n", tag.Name, tag.Value)
+	tags := s.GetTags()
+	fmt.Println("  `-- tags")
+	for i, tag := range tags {
+		decoration := "|"
+		if i == len(tags)-1 {
+			decoration = "`"
+		}
+		fmt.Printf("      %s-- %s: %s\n", decoration, tag.Name, tag.Value)
 	}
 
 	// Done!

@@ -14,7 +14,7 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
 )
 
-func Edit(uri string, dropTags bool, tags []secret.Tag) {
+func Edit(uri string, dropTags bool, tags []secret.Tag, ignoreSchema bool) {
 	// Initialize output writer.
 	output, err := ioutil.TempFile("", "pgp-tomb-")
 	if err != nil {
@@ -24,7 +24,7 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 	}
 	defer os.Remove(output.Name())
 
-	// Try to load secret.
+	// Try to load secret / dump initial skeleton.
 	s, err := secret.Load(uri)
 	switch err := err.(type) {
 	case nil:
@@ -36,6 +36,11 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 		}
 		output.Close()
 	case *secret.DoesNotExist:
+		s = secret.New(uri)
+		s.SetTags(tags)
+		if template := s.GetTemplate(); template != nil {
+			ioutil.WriteFile(output.Name(), template.Skeleton, 0644)
+		}
 	default:
 		logrus.WithFields(logrus.Fields{
 			"error": err,
@@ -44,25 +49,10 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 		return
 	}
 
-	// Compute initial digest.
-	digest := md5File(output.Name())
-
-	// Open decrypted secret in an external editor.
-	cmd := exec.Command(config.GetEditor(), output.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"editor": config.GetEditor(),
-			"error":  err,
-		}).Fatal("Failed to open external editor!")
-	}
-
 	// Decide new tags.
 	var updateTags bool
 	var newTags []secret.Tag
-	if dropTags || s == nil {
+	if dropTags {
 		updateTags = true
 		newTags = tags
 	} else {
@@ -70,11 +60,41 @@ func Edit(uri string, dropTags bool, tags []secret.Tag) {
 		newTags = s.GetTags()
 	}
 
-	// Check if secret needs to be updated.
-	if updateTags || digest != md5File(output.Name()) {
-		Set(uri, output.Name(), newTags)
-	} else {
-		fmt.Println("No changes!")
+	// Compute initial digest.
+	digest := md5File(output.Name())
+
+	// Avoid loosing edited changes.
+	for {
+		// Open decrypted secret / initial skeleton in an external editor.
+		cmd := exec.Command(config.GetEditor(), output.Name())
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"editor": config.GetEditor(),
+				"error":  err,
+			}).Fatal("Failed to open external editor!")
+		}
+
+		// Check if secret needs to be updated.
+		if updateTags || digest != md5File(output.Name()) {
+			if set(uri, output.Name(), newTags, ignoreSchema) {
+				fmt.Println("Done!")
+				break
+			} else {
+				fmt.Print("\nReopen editor? (Y/n) ")
+				var response string
+				_, err := fmt.Scanln(&response)
+				if err == nil && response == "n" {
+					fmt.Println("Aborted!")
+					break
+				}
+			}
+		} else {
+			fmt.Println("No changes!")
+			break
+		}
 	}
 }
 
