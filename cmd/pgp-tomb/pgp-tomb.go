@@ -38,21 +38,21 @@ __pgp-tomb_complete_secret_uri() {
 	fi
 
 	if [ ! -z "$secrets" ]; then
-		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*.secret' -- "$cur"))
+		COMPREPLY=( $(cd "$secrets" && compgen -o plusdirs -f -X '!*` + config.SecretExtension + `' -- "$cur"))
 
 		if [ "${#COMPREPLY[@]}" == "1" ]; then
 			if [ -d "$secrets/$COMPREPLY" ]; then
 				LASTCHAR=/
 				COMPREPLY=$(printf %q%s "$COMPREPLY" "$LASTCHAR")
 			elif [ -f "$secrets/$COMPREPLY" ]; then
-				COMPREPLY=$(printf %q "${COMPREPLY%.secret}")
+				COMPREPLY=$(printf %q "${COMPREPLY%` + config.SecretExtension + `}")
 			fi
 		else
 			for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
 				[ -d "$secrets/${COMPREPLY[$i]}" ] && \
 					COMPREPLY[$i]=${COMPREPLY[$i]}/
 				[ -f "$secrets/${COMPREPLY[$i]}" ] && \
-					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%.secret}")
+					COMPREPLY[$i]=$(printf %q "${COMPREPLY[$i]%` + config.SecretExtension + `}")
 			done
 		fi
 	else
@@ -251,7 +251,7 @@ func main() {
 		Short: "Rebuild / check secrets",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
-				return errors.New("rebuilding multiple folders is not supported")
+				return errors.New("rebuilding multiple folders / URIs is not supported")
 			}
 			if cmdRebuildWorkers < 1 {
 				return errors.New("at least one worker is needed")
@@ -291,7 +291,7 @@ func main() {
 		Aliases: []string{"ls", "dir"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
-				return errors.New("listing multiple folders is not supported")
+				return errors.New("listing multiple folders / URIs is not supported")
 			}
 			return nil
 		},
@@ -305,7 +305,7 @@ func main() {
 	}
 	cmdList.PersistentFlags().BoolVarP(
 		&cmdListLong, "long", "l", false,
-		"list using the long format")
+		"list using the long format (requires decryption when checking templates)")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListQuery, "query", "",
 		"limit listing to secrets matching this query")

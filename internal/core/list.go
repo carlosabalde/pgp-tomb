@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
@@ -45,7 +47,7 @@ func List(folderOrUri string, long bool, queryString, keyAlias string) {
 	// Check folder vs. URI & walk file system.
 	root := ""
 	if folderOrUri != "" {
-		item := path.Join(config.GetSecretsRoot(), folderOrUri + config.SecretExtension)
+		item := path.Join(config.GetSecretsRoot(), folderOrUri+config.SecretExtension)
 		if info, err := os.Stat(item); err == nil && !info.IsDir() {
 			walk(item, info, err)
 		} else {
@@ -158,7 +160,18 @@ func renderSecretDetails(s *secret.Secret) {
 	// Render template.
 	fmt.Print("  |-- template: ")
 	if template := s.GetTemplate(); template != nil {
-		fmt.Println(template.Alias)
+		decoration := "✓"
+		buffer := new(bytes.Buffer)
+		if err := s.Decrypt(buffer); err != nil {
+			decoration = "?"
+		} else {
+			loader := gojsonschema.NewStringLoader(buffer.String())
+			validation, err := template.Schema.Validate(loader)
+			if err != nil || !validation.Valid() {
+				decoration = "✗"
+			}
+		}
+		fmt.Printf("%s %s\n", template.Alias, decoration)
 	} else {
 		fmt.Println("-")
 	}

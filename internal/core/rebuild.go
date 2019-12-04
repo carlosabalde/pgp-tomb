@@ -45,7 +45,7 @@ func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
 	// Check folder vs. URI & walk file system.
 	root := ""
 	if folderOrUri != "" {
-		item := path.Join(config.GetSecretsRoot(), folderOrUri + config.SecretExtension)
+		item := path.Join(config.GetSecretsRoot(), folderOrUri+config.SecretExtension)
 		if info, err := os.Stat(item); err == nil && !info.IsDir() {
 			walk(item, info, err)
 		} else {

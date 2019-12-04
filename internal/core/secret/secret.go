@@ -162,7 +162,7 @@ func (self *Secret) GetTemplate() *config.Template {
 	return nil
 }
 
-func (self *Secret) GetRecipients() (expected []string, unknown []string, rubbish []string, missing []string, e error) {
+func (self *Secret) GetRecipients() (expected, unknown, rubbish, missing []string, e error) {
 	// Initializations.
 	expected = make([]string, 0)
 	current := make([]string, 0)
