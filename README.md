@@ -32,12 +32,12 @@ SETUP
    |-- templates/
    |   |-- login.skeleton
    |   `-- login.schema
-   `-- secrets/   
+   `-- secrets/
    ```
 
 3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
    - Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
-   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration). 
+   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
    - Templates (i.e. JSON Schema and/or JSON / YAML skeletons) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
    root: /home/carlos/pgp-tomb
@@ -84,30 +84,30 @@ SETUP
 
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.
    ```
-   # Show command line options.   
-   $ pgp-agent --help
+   # Show command line options.
+   $ pgp-tomb --help
 
    # Create a new secret using an editor (you can choose your preferred editor
    # using the EDITOR environment variable).
-   $ pgp-agent edit foo/answers.md
+   $ pgp-tomb edit foo/answers.md
 
    # Copy contents of a secret to the system clipboard (depends on 'xsel'
    # or 'xclip' in Linux systems).
-   $ pgp-agent get foo/answers.md --copy
+   $ pgp-tomb get foo/answers.md --copy
 
    # List URIs of secrets theoretically readable by 'chuck' according with the
    # permissions defined in the current configuration.
-   $ pgp-agent list --long --key chuck
+   $ pgp-tomb list --long --key chuck
 
    # Check all secrets and re-encrypt them if current recipients don't match
    # the list of expected recipients according with the current configuration.
-   $ pgp-agent rebuild
+   $ pgp-tomb rebuild
    ```
 
 DEVELOPMENT
 ===========
 
-Running `make docker` you can build & connect to a handy Docker container useful to ease development and packaging phases. These is what you need to know:
+Running `make docker` you can build & connect to a handy Docker container useful to ease development and packaging phases. This is what you need to know:
 
 - Once connected to the container you can build the project and execute it as follows.
   ```

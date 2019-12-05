@@ -21,7 +21,7 @@ all: help
 .PHONY: help
 help:
 	@echo 'make docker - launch Docker shell'
-	@echo 'make build - build $(PROJECT) for follwing OS-ARCH constilations: $(XC_OS) / $(XC_ARCH) '
+	@echo 'make build - build $(PROJECT) for following OS-ARCH pairs: $(XC_OS) / $(XC_ARCH) '
 	@echo 'make build-dev - build $(PROJECT) for OS-ARCH set by GOOS and GOARCH env variables'
 	@echo 'make fmt - run gofmt & goimports'
 	@echo 'make lint - run golangci-lint'
