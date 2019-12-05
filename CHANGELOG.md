@@ -1,7 +1,9 @@
-- v0.3.1 (?):
+- v? (?):
+    + ...
+
+- v0.3.1 (2019-12-05):
     + Add 'init' command.
     + Add execution hooks.
-    + ... 
 
 - v0.3.0 (2019-12-04):
     + Add support for templates (i.e. schemas + skeletons).
