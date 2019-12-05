@@ -1,4 +1,6 @@
 - v0.3.1 (?):
+    + Add 'init' command.
+    + ... 
 
 - v0.3.0 (2019-12-04):
     + Add support for templates (i.e. schemas + skeletons).

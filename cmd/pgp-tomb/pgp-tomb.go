@@ -327,6 +327,19 @@ func main() {
 		&cmdListIgnoreSchema, "ignore-schema", false,
 		"skip schema validation")
 
+	// 'init' command.
+	cmdInit := &cobra.Command{
+		Use:   "init <path>",
+		Short: "Initialize a new tomb",
+		Args:  cobra.ExactArgs(1),
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Skip initConfig().
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			core.Initialize(args[0])
+		},
+	}
+
 	// 'bash' command.
 	cmdBash := &cobra.Command{
 		Use:   "bash",
@@ -358,6 +371,6 @@ func main() {
 
 	// Register commands & execute.
 	rootCmd.AddCommand(
-		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdBash, cmdZsh)
+		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdInit, cmdBash, cmdZsh)
 	rootCmd.Execute()
 }
