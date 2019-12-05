@@ -138,6 +138,7 @@ func executeHook(alias string, command string) {
 		cmd := exec.Command(hook.Path, args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
 		if err := cmd.Run(); err != nil {
 			switch err := err.(type) {
 			case *exec.ExitError:

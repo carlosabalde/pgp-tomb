@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Initializations.
-set -e
+# Configuration.
+MAX_AGE=86400
 
 # Check input arguments.
 if [ "$#" -ne 2 ]; then
@@ -9,3 +9,45 @@ if [ "$#" -ne 2 ]; then
 fi
 ROOT=$1
 COMMAND=$2
+
+# Initializations.
+set -e
+cd "$ROOT"
+cd "$(git rev-parse --show-toplevel)"
+
+# Do not continue if Git is not installed of if the current folder does not look
+# like a Git repository.
+if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" != "true" ]; then
+    exit 0
+fi
+
+# Check if the repository has not been updated in a while.
+NOW=$(date +%s)
+STAT_OPTS='-c %Y'
+if uname | grep -q 'Darwin'; then
+    STAT_OPTS='-f %m'
+fi
+LAST_UPDATE=$(stat $STAT_OPTS .git/FETCH_HEAD)
+if [ "$[$NOW-$LAST_UPDATE]" -ge "$MAX_AGE" ]; then
+    # About ASCII art:
+    #   - http://patorjk.com/software/taag/#p=display&h=1&f=Bloody&t=Pull%20please!
+    echo
+    echo ' ██▓███   █    ██  ██▓     ██▓        ██▓███   ██▓    ▓█████ ▄▄▄        ██████ ▓█████  ▐██▌ '
+    echo '▓██░  ██▒ ██  ▓██▒▓██▒    ▓██▒       ▓██░  ██▒▓██▒    ▓█   ▀▒████▄    ▒██    ▒ ▓█   ▀  ▐██▌ '
+    echo '▓██░ ██▓▒▓██  ▒██░▒██░    ▒██░       ▓██░ ██▓▒▒██░    ▒███  ▒██  ▀█▄  ░ ▓██▄   ▒███    ▐██▌ '
+    echo '▒██▄█▓▒ ▒▓▓█  ░██░▒██░    ▒██░       ▒██▄█▓▒ ▒▒██░    ▒▓█  ▄░██▄▄▄▄██   ▒   ██▒▒▓█  ▄  ▓██▒ '
+    echo '▒██▒ ░  ░▒▒█████▓ ░██████▒░██████▒   ▒██▒ ░  ░░██████▒░▒████▒▓█   ▓██▒▒██████▒▒░▒████▒ ▒▄▄  '
+    echo '▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░░ ▒░▓  ░   ▒▓▒░ ░  ░░ ▒░▓  ░░░ ▒░ ░▒▒   ▓▒█░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒ '
+    echo '░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░ ▒  ░   ░▒ ░     ░ ░ ▒  ░ ░ ░  ░ ▒   ▒▒ ░░ ░▒  ░ ░ ░ ░  ░ ░  ░ '
+    echo '░░        ░░░ ░ ░   ░ ░     ░ ░      ░░         ░ ░      ░    ░   ▒   ░  ░  ░     ░       ░ '
+    echo '            ░         ░  ░    ░  ░                ░  ░   ░  ░     ░  ░      ░     ░  ░ ░    '
+    echo
+    echo
+
+    # Run git pull only if explicitly allowed by the user.
+    read -p "> Run 'git pull --rebase' now? (Y/n) " -n 1 -r REPLY
+    REPLY=${REPLY:-Y}
+    if [ "$REPLY" = "y" -o "$REPLY" = "Y" ]; then
+        git pull --rebase
+    fi
+fi
