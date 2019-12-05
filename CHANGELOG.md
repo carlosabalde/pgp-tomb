@@ -1,5 +1,6 @@
 - v0.3.1 (?):
     + Add 'init' command.
+    + Add execution hooks.
     + ... 
 
 - v0.3.0 (2019-12-04):

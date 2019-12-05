@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo 'Running PGP Tomb pre-execution hook!'
+echo "  - \$@ = $@"

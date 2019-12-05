@@ -13,11 +13,18 @@ var (
 	revision string
 )
 
+const HookExtension = ".hook"
 const PublicKeyExtension = ".pub"
 const SecretExtension = ".secret"
 const TemplateSchemaExtension = ".schema"
 const TemplateSkeletonExtension = ".skeleton"
+
 const DefaultEditor = "vim"
+
+type Hook struct {
+	Alias string
+	Path  string
+}
 
 type Team struct {
 	Alias string
@@ -51,6 +58,14 @@ func GetVersion() string {
 
 func GetRevision() string {
 	return revision
+}
+
+func GetRoot() string {
+	return viper.GetString("root")
+}
+
+func GetHooks() map[string]Hook {
+	return viper.Get("hooks").(map[string]Hook)
 }
 
 func GetPublicKeys() map[string]*pgp.PublicKey {

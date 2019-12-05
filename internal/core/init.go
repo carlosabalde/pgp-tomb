@@ -30,7 +30,7 @@ templates:
 )
 
 var (
-	folders = [...]string {
+	folders = [...]string{
 		"hooks",
 		"keys",
 		"secrets",
