@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 
-echo 'Running PGP Tomb pre-execution hook!'
-echo "  - \$@ = $@"
+# Initializations.
+set -e
+
+# Check input arguments.
+if [ "$#" -ne 2 ]; then
+    exit 1
+fi
+ROOT=$1
+COMMAND=$2
