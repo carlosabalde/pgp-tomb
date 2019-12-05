@@ -39,14 +39,18 @@ func Edit(uri string, dropTags bool, tags []secret.Tag, ignoreSchema bool) {
 		s = secret.New(uri)
 		s.SetTags(tags)
 		if template := s.GetTemplate(); template != nil {
-			ioutil.WriteFile(output.Name(), template.Skeleton, 0644)
+			if err := ioutil.WriteFile(output.Name(), template.Skeleton, 0644); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"error": err,
+					"uri":   uri,
+				}).Fatal("Failed to dump skeleton!")
+			}
 		}
 	default:
 		logrus.WithFields(logrus.Fields{
 			"error": err,
 			"uri":   uri,
-		}).Error("Failed to load secret!")
-		return
+		}).Fatal("Failed to load secret!")
 	}
 
 	// Decide new tags.

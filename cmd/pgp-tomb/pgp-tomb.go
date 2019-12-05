@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 
@@ -76,6 +77,10 @@ var (
 		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
+			executeHook("pre", cmd.Name())
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			executeHook("post", cmd.Name())
 		},
 	}
 )
@@ -121,6 +126,32 @@ func initConfig() {
 
 	// Validate & initialize configuration.
 	config.Init()
+}
+
+func executeHook(alias string, command string) {
+	hooks := config.GetHooks()
+	if hook, found := hooks[alias]; found {
+		args := []string{
+			config.GetRoot(),
+			command,
+		}
+		cmd := exec.Command(hook.Path, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		if err := cmd.Run(); err != nil {
+			switch err := err.(type) {
+			case *exec.ExitError:
+				fmt.Fprintf(os.Stderr, "Aborted by '%s' hook!\n", alias)
+				os.Exit(1)
+			default:
+				logrus.WithFields(logrus.Fields{
+					"error": err,
+					"hook":  alias,
+				}).Fatal("Failed to execute hook!")
+			}
+		}
+	}
 }
 
 func parseTags(tags []string) []secret.Tag {
@@ -227,7 +258,7 @@ func main() {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
 			}
-			for _, tag := range cmdSetTags {
+			for _, tag := range cmdEditTags {
 				if !strings.Contains(tag, ":") {
 					return errors.New("expected tag format is 'name: value'")
 				}
@@ -327,16 +358,35 @@ func main() {
 		&cmdListIgnoreSchema, "ignore-schema", false,
 		"skip schema validation")
 
+	// 'init' command.
+	cmdInit := &cobra.Command{
+		Use:   "init <path>",
+		Short: "Initialize a new tomb",
+		Args:  cobra.ExactArgs(1),
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Skip initialization of configuration & execution of hooks.
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			core.Initialize(args[0])
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			// Skip execution of hooks.
+		},
+	}
+
 	// 'bash' command.
 	cmdBash := &cobra.Command{
 		Use:   "bash",
 		Short: "Generate Bash completion script",
 		Args:  cobra.NoArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Skip initConfig().
+			// Skip initialization of configuration & execution of hooks.
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			rootCmd.GenBashCompletion(os.Stdout)
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			// Skip execution of hooks.
 		},
 	}
 
@@ -346,7 +396,7 @@ func main() {
 		Short: "Generate Zsh completion script",
 		Args:  cobra.NoArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Skip initConfig().
+			// Skip initialization of configuration & execution of hooks.
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			// XXX: custom completion function for secret URIs not yet available
@@ -354,10 +404,13 @@ func main() {
 			//   - https://github.com/spf13/cobra/pull/884
 			rootCmd.GenZshCompletion(os.Stdout)
 		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			// Skip execution of hooks.
+		},
 	}
 
 	// Register commands & execute.
 	rootCmd.AddCommand(
-		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdBash, cmdZsh)
+		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdInit, cmdBash, cmdZsh)
 	rootCmd.Execute()
 }

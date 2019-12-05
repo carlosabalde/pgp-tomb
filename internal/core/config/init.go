@@ -22,6 +22,7 @@ func Init() {
 	initRootConfig()
 	initGPGConfig()
 	initEditorConfig()
+	initHooksConfig()
 	initPublicKeysConfig()
 	initSecretsConfig()
 	initKeepersConfig()
@@ -83,9 +84,44 @@ func initEditorConfig() {
 	viper.Set("editor", executable)
 }
 
+func initHooksConfig() {
+	hooks := make(map[string]Hook)
+	hooksRoot := path.Join(GetRoot(), "hooks")
+
+	if info, err := os.Stat(hooksRoot); os.IsNotExist(err) || !info.IsDir() {
+		logrus.WithFields(logrus.Fields{
+			"folder": hooksRoot,
+			"error":  err,
+		}).Fatal("Failed to access to hooks folder!")
+	}
+
+	for _, alias := range [...]string{"pre", "post"} {
+		path := path.Join(hooksRoot, alias+HookExtension)
+		if info, err := os.Stat(path); err == nil && !info.IsDir() && info.Mode()&0111 != 0 {
+			hooks[alias] = Hook{
+				Alias: alias,
+				Path:  path,
+			}
+		}
+	}
+
+	res, err := maps.KeysSlice(hooks)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	hooksAliases := res.Interface().([]string)
+	sort.Strings(hooksAliases)
+	logrus.WithFields(logrus.Fields{
+		"folder": hooksRoot,
+		"hooks":  strings.Join(hooksAliases, ", "),
+	}).Info("Hooks initialized")
+
+	viper.Set("hooks", hooks)
+}
+
 func initPublicKeysConfig() {
 	keys := make(map[string]*pgp.PublicKey)
-	keysRoot := path.Join(viper.GetString("root"), "keys")
+	keysRoot := path.Join(GetRoot(), "keys")
 
 	if info, err := os.Stat(keysRoot); os.IsNotExist(err) || !info.IsDir() {
 		logrus.WithFields(logrus.Fields{
@@ -145,7 +181,7 @@ func initPublicKeysConfig() {
 }
 
 func initSecretsConfig() {
-	secretsRoot := path.Join(viper.GetString("root"), "secrets")
+	secretsRoot := path.Join(GetRoot(), "secrets")
 
 	if info, err := os.Stat(secretsRoot); os.IsNotExist(err) || !info.IsDir() {
 		logrus.WithFields(logrus.Fields{
@@ -305,7 +341,7 @@ func initPermissionRulesConfig() {
 
 func initTemplatesConfig() {
 	templates := make(map[string]*Template)
-	templatesRoot := path.Join(viper.GetString("root"), "templates")
+	templatesRoot := path.Join(GetRoot(), "templates")
 
 	if info, err := os.Stat(templatesRoot); os.IsNotExist(err) || !info.IsDir() {
 		logrus.WithFields(logrus.Fields{

@@ -1,12 +1,14 @@
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
-- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as **binary PGP files encrypted & gzipped using one or more public keys** (i.e. recipients).
+- Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as **binary PGP files encrypted & gzipped using one or more public keys** (i.e. recipients). You can create as many tombs (i.e. collections of secrets) as needed.
 
 - Secrets can be **tagged using an unlimited number of (name, value) pairs** stored as unencrypted meta-information of the gzipped file.
 
-- A **flexible permissions model is provided in order to allow sharing secrets in multi-user environments**. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users. It's up to you the decision of who can see what, as well as the way of sharing secrets across the organization (e.g. a git repository, a shared folder, etc.).
+- A **flexible permissions model is provided in order to allow sharing secrets in multi-user environments**. Public PGP keys can be organized in teams and access to each secret or collection of secrets can be easily restricted to one or more teams and / or individual users.
 
 - A **flexible JSON Schema based templating model is provided in order to enforce formatting of JSON / YAML secrets** and provide initial skeleton for new secrets. Each secret or group of secrets can optionally and easily be linked to a template in order to enforce your formatting requirements when creating or editing them.
+
+- **Configurable pre & post execution hooks are available in order to ease integration with external tools like Git** (useful to easily share tombs across your organization).
 
 - Encryption of secrets using public ASCII armored PGP keys is directly and efficiently handled by PGP Tomb using the official OpenPGP Go library. However, decryption is built on top of your local GPG infrastructure in order to **seamlessly integrate with your local GPG Agent and avoid messing with your private PGP keys**.
 
@@ -18,13 +20,17 @@ SETUP
    $ go get -u github.com/carlosabalde/pgp-tomb/cmd/pgp-tomb/
    ```
 
-2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders:
-   1. The PGP Tomb configuration file.
+2. Somewhere in your file system (e.g. `~/pgp-tomb/`) create the following files & folders. You can do it manually, or simply run `pgp-tomb init ~/pgp-tomb/` to create a brand new tomb:
+   1. The PGP Tomb [configuration file](config/pgp-tomb.yaml).
    2. The folder containing the PGP public keys (`.pub` extension and ASCII armor are required) of users in your organization (i.e. no need to import these keys in your local GPG keyring).
-   3. The folder containing the templates (`.schema` and `.skeleton` extensions are required).
-   4. The folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
+   3. The folder containing the [templates](files/templates/) (`.schema` and `.skeleton` extensions are required).
+   4. The folder containing the [hooks](files/hooks/) (`.hook` extension and execution permissions are required).
+   5. The folder that will store encrypted secrets (`.secret` files will populate this folder once you start using the manager).
    ```
    |-- pgp-tomb.yaml
+   |-- hooks/
+   |   |-- pre.hook
+   |   `-- post.hook
    |-- keys/
    |   |-- alice.pub
    |   |-- bob.pub
@@ -32,12 +38,12 @@ SETUP
    |-- templates/
    |   |-- login.skeleton
    |   `-- login.schema
-   `-- secrets/   
+   `-- secrets/
    ```
 
 3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
    - Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
-   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration). 
+   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
    - Templates (i.e. JSON Schema and/or JSON / YAML skeletons) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
    root: /home/carlos/pgp-tomb
@@ -84,30 +90,30 @@ SETUP
 
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.
    ```
-   # Show command line options.   
-   $ pgp-agent --help
+   # Show command line options.
+   $ pgp-tomb --help
 
    # Create a new secret using an editor (you can choose your preferred editor
    # using the EDITOR environment variable).
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml edit foo/answers.md
+   $ pgp-tomb edit foo/answers.md
 
    # Copy contents of a secret to the system clipboard (depends on 'xsel'
    # or 'xclip' in Linux systems).
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml get foo/answers.md --copy
+   $ pgp-tomb get foo/answers.md --copy
 
    # List URIs of secrets theoretically readable by 'chuck' according with the
    # permissions defined in the current configuration.
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml list --key chuck
+   $ pgp-tomb list --long --key chuck
 
    # Check all secrets and re-encrypt them if current recipients don't match
    # the list of expected recipients according with the current configuration.
-   $ pgp-agent --config ~/pgp-tomb/pgp-tomb.yaml rebuild
+   $ pgp-tomb rebuild
    ```
 
 DEVELOPMENT
 ===========
 
-Running `make docker` you can build & connect to a handy Docker container useful to ease development and packaging phases. These is what you need to know:
+Running `make docker` you can build & connect to a handy Docker container useful to ease development and packaging phases. This is what you need to know:
 
 - Once connected to the container you can build the project and execute it as follows.
   ```

@@ -49,7 +49,6 @@ func GetRecipientKeyIdsForEncryptedMessage(input io.Reader) ([]uint64, error) {
 			result = append(result, packet.KeyId)
 		default:
 			return result, nil
-			break
 		}
 	}
 
