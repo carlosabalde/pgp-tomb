@@ -227,7 +227,7 @@ func main() {
 			if len(args) != 1 {
 				return errors.New("requires a secret URI argument")
 			}
-			for _, tag := range cmdSetTags {
+			for _, tag := range cmdEditTags {
 				if !strings.Contains(tag, ":") {
 					return errors.New("expected tag format is 'name: value'")
 				}
