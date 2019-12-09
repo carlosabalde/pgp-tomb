@@ -3,7 +3,7 @@ package query
 import "testing"
 
 func TestLogicalAnd(t *testing.T) {
-	cases := []struct {
+	tests := []struct {
 		query  Query
 		result bool
 	}{
@@ -12,7 +12,9 @@ func TestLogicalAnd(t *testing.T) {
 		{And(True, False), false},
 		{And(True, True), true},
 	}
-	for _, test := range cases {
+
+	for _, test := range tests {
+		t.Logf("%s", test.query)
 		if test.query.Eval(nil) != test.result {
 			t.Error("unexpected result")
 		}

@@ -20,6 +20,14 @@ type Context interface {
 	GetIdentifier(string) string
 }
 
+// Map is a simple implementation of Context using a map of strings. Mainly
+// useful for testing purposes.
+type Map map[string]string
+
+func (self Map) GetIdentifier(key string) string {
+	return self[key]
+}
+
 func Parse(query string) (Query, error) {
 	tree, err := parser.Parse(query)
 	if err != nil {
