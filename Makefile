@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+SHELL := /bin/bash
 
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
