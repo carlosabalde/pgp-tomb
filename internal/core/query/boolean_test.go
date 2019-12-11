@@ -1,6 +1,10 @@
 package query
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestBoolean(t *testing.T) {
 	tests := []struct {
@@ -12,9 +16,6 @@ func TestBoolean(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Logf("%s", test.query)
-		if test.query.Eval(nil) != test.result {
-			t.Error("unexpected result")
-		}
+		assert.Equal(t, test.query.Eval(nil), test.result)
 	}
 }

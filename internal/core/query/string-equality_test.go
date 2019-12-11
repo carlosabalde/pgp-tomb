@@ -1,6 +1,10 @@
 package query
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestEqual(t *testing.T) {
 	context1 := Map{
@@ -23,9 +27,6 @@ func TestEqual(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Logf("%s", test.query)
-		if test.query.Eval(test.context) != test.result {
-			t.Error("unexpected result")
-		}
+		assert.Equal(t, test.query.Eval(test.context), test.result)
 	}
 }
