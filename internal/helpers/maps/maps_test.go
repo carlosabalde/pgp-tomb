@@ -7,22 +7,22 @@ import (
 )
 
 func TestKeysSlice(t *testing.T) {
-	if keys, err := KeysSlice(map[string]bool{"foo": true, "bar": false}); assert.NoError(t, err) {
+	if result, err := KeysSlice(map[string]bool{"foo": true, "bar": false}); assert.NoError(t, err) {
 		expected := []string{"foo", "bar"}
-		if assert.IsType(t, keys.Interface(), expected) {
+		if assert.IsType(t, result.Interface(), expected) {
 			assert.ElementsMatch(
 				t,
-				keys.Interface().([]string),
+				result.Interface().([]string),
 				expected)
 		}
 	}
 
-	if keys, err := KeysSlice(map[int]bool{}); assert.NoError(t, err) {
+	if result, err := KeysSlice(map[int]bool{}); assert.NoError(t, err) {
 		expected := []int{}
-		if assert.IsType(t, keys.Interface(), expected) {
+		if assert.IsType(t, result.Interface(), expected) {
 			assert.ElementsMatch(
 				t,
-				keys.Interface().([]int),
+				result.Interface().([]int),
 				expected)
 		}
 	}
