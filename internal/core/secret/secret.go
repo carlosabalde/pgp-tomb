@@ -100,8 +100,15 @@ func (self *Secret) Decrypt(output io.Writer) error {
 	}
 	defer input.Close()
 
-	if err := pgp.DecryptWithGPG(config.GetGPG(), input, output); err != nil {
-		return errors.Wrap(err, "failed to decrypt secret")
+	key := config.GetPrivateKey()
+	if key == nil {
+		if err := pgp.DecryptWithGPG(config.GetGPG(), input, output); err != nil {
+			return errors.Wrap(err, "failed to decrypt secret")
+		}
+	} else {
+		if err := pgp.Decrypt(config.GetGPGConnectAgent(), input, output, key); err != nil {
+			return errors.Wrap(err, "failed to decrypt secret")
+		}
 	}
 
 	return nil

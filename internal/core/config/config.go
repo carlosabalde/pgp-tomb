@@ -68,6 +68,10 @@ func GetHooks() map[string]Hook {
 	return viper.Get("hooks").(map[string]Hook)
 }
 
+func GetPrivateKey() *pgp.PrivateKey {
+	return viper.Get("key").(*pgp.PrivateKey)
+}
+
 func GetPublicKeys() map[string]*pgp.PublicKey {
 	return viper.Get("keys").(map[string]*pgp.PublicKey)
 }
@@ -98,6 +102,10 @@ func GetTemplateRules() []TemplateRule {
 
 func GetGPG() string {
 	return viper.GetString("gpg")
+}
+
+func GetGPGConnectAgent() string {
+	return viper.GetString("gpg-connect-agent")
 }
 
 func GetEditor() string {

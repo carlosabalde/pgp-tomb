@@ -23,6 +23,7 @@ func Init() {
 	initGPGConfig()
 	initEditorConfig()
 	initHooksConfig()
+	initKeyConfig()
 	initPublicKeysConfig()
 	initSecretsConfig()
 	initKeepersConfig()
@@ -49,10 +50,22 @@ func initRootConfig() {
 }
 
 func initGPGConfig() {
-	executable, err := exec.LookPath("gpg")
+	var command string
+
+	viper.Set("gpg", "")
+	viper.Set("gpg-connect-agent", "")
+
+	if !viper.IsSet("key") || viper.GetString("key") == "" {
+		command = "gpg"
+	} else {
+		command = "gpg-connect-agent"
+	}
+
+	executable, err := exec.LookPath(command)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"error": err,
+			"error":   err,
+			"command": command,
 		}).Fatal("Failed to locate GPG executable!")
 	}
 
@@ -60,7 +73,7 @@ func initGPGConfig() {
 		"executable": executable,
 	}).Info("GPG initialized")
 
-	viper.Set("gpg", executable)
+	viper.Set(command, executable)
 }
 
 func initEditorConfig() {
@@ -119,6 +132,36 @@ func initHooksConfig() {
 	viper.Set("hooks", hooks)
 }
 
+func initKeyConfig() {
+	path := viper.GetString("key")
+	if path != "" {
+		input, err := os.Open(path)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"path":  path,
+				"error": err,
+			}).Fatal("Failed to read private key!")
+		}
+		defer input.Close()
+
+		key, err := pgp.LoadASCIIArmoredPrivateKey(input)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"file":  path,
+				"error": err,
+			}).Fatal("Failed to load private key!")
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"path": path,
+		}).Info("Private key initialized")
+
+		viper.Set("key", &key)
+	} else {
+		viper.Set("key", (*pgp.PrivateKey)(nil))
+	}
+}
+
 func initPublicKeysConfig() {
 	keys := make(map[string]*pgp.PublicKey)
 	keysRoot := path.Join(GetRoot(), "keys")
@@ -143,7 +186,7 @@ func initPublicKeysConfig() {
 					logrus.WithFields(logrus.Fields{
 						"path":  path,
 						"error": err,
-					}).Fatal("Failed to load public key!")
+					}).Fatal("Failed to read public key!")
 				}
 				defer input.Close()
 

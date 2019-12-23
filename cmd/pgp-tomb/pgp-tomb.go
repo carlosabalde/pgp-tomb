@@ -71,6 +71,7 @@ var (
 	cfgFile string
 	verbose bool
 	root    string
+	key     string
 	rootCmd = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                config.GetVersion(),
@@ -186,6 +187,10 @@ func main() {
 		&root, "root", "",
 		"override 'root' option in config file")
 	viper.BindPFlag("root", rootCmd.PersistentFlags().Lookup("root"))
+	rootCmd.PersistentFlags().StringVar(
+		&key, "key", "",
+		"override 'key' option in config file")
+	viper.BindPFlag("key", rootCmd.PersistentFlags().Lookup("key"))
 
 	// 'get' command.
 	var cmdGetFile string

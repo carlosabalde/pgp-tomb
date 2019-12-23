@@ -1,5 +1,7 @@
 root: /mnt/files
 
+key: /mnt/files/keys/alice.pri
+
 keepers:
   - alice
   - bob
