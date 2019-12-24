@@ -19,6 +19,8 @@ const (
 
 root: %s
 
+key:
+
 keepers:
   - alice
 

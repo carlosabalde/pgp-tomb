@@ -41,7 +41,7 @@ func Get(uri, outputPath string, copyToClipboard bool) {
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
 					"error": err,
-					"path":  outputPath,
+					"file":  outputPath,
 				}).Fatal("Failed to open output file!")
 			}
 			defer file.Close()

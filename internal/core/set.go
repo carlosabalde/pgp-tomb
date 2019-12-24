@@ -32,7 +32,7 @@ func set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) bool {
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"error": err,
-				"path":  inputPath,
+				"file":  inputPath,
 			}).Error("Failed to open input file!")
 			return false
 		}

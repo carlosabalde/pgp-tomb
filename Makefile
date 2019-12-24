@@ -1,10 +1,10 @@
-SHELL = /bin/bash
+SHELL := /bin/bash
 
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 PROJECT := pgp-tomb
 VERSION := $(shell cat VERSION)
-XC_OS := linux darwin
+XC_OS := linux darwin windows
 XC_ARCH := 386 amd64 arm
 GO111MODULE := on
 

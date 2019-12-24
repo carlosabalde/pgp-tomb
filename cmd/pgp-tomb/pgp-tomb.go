@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -71,6 +70,7 @@ var (
 	cfgFile string
 	verbose bool
 	root    string
+	key     string
 	rootCmd = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                config.GetVersion(),
@@ -125,7 +125,7 @@ func initConfig() {
 	}
 
 	// Validate & initialize configuration.
-	config.Init()
+	config.Init(viper.ConfigFileUsed())
 }
 
 func executeHook(alias string, command string) {
@@ -168,7 +168,7 @@ func parseTags(tags []string) []secret.Tag {
 
 func main() {
 	// Initializations.
-	syscall.Umask(0077)
+	setUmask()
 
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
@@ -186,6 +186,10 @@ func main() {
 		&root, "root", "",
 		"override 'root' option in config file")
 	viper.BindPFlag("root", rootCmd.PersistentFlags().Lookup("root"))
+	rootCmd.PersistentFlags().StringVar(
+		&key, "key", "",
+		"override 'key' option in config file")
+	viper.BindPFlag("key", rootCmd.PersistentFlags().Lookup("key"))
 
 	// 'get' command.
 	var cmdGetFile string

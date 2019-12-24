@@ -196,7 +196,7 @@ func checkUnexpectFile(path string, dryRun bool) string {
 		if err := os.Remove(path); err != nil {
 			logrus.WithFields(logrus.Fields{
 				"error": err,
-				"path":  path,
+				"file":  path,
 			}).Error("Failed to remove unexpected file!")
 			result += " ✗"
 		} else {

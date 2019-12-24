@@ -42,11 +42,15 @@ SETUP
    ```
 
 3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
-   - Permissions for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
-   - Users in the list of keepers will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
-   - Templates (i.e. JSON Schema and/or JSON / YAML skeletons) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
+   - The `root` option can be overridden using the `--root` command line flag.
+   - Optionally you can provide the path to your personal ASCII armored PGP secret key using the `key` option (it can be overridden using the `--key` flag). If so, decryption of secrets will be directly handled by PGP Tomb instead of using your local GPG infrastructure. This assumes `gpg-connect-agent` is properly configured.
+   - Permissions (`permissions` option) for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
+   - Users in the list of keepers (`keepers` option) will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
+   - Templates (i.e. JSON Schema and/or JSON / YAML skeletons; `templates` option) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
    root: /home/carlos/pgp-tomb
+
+   key:
 
    keepers:
      - alice

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/xeipuuv/gojsonschema"
@@ -18,11 +19,81 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Init() {
+const (
+	schema = `
+{
+  "required": [
+    "keepers"
+  ],
+  "type": "object",
+  "properties": {
+    "root": {
+      "type": "string"
+    },
+    "key": {
+      "type": "string"
+    },
+    "keepers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "teams": {
+      "type": "object",
+      "patternProperties": {
+        ".*": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "maxProperties": 1,
+        "patternProperties": {
+          ".*": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:\\+|\\-).+"
+            }
+          }
+        }
+      }
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "maxProperties": 1,
+        "patternProperties": {
+          ".*": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
+`
+)
+
+func Init(file string) {
+	checkSchema(file)
 	initRootConfig()
 	initGPGConfig()
 	initEditorConfig()
 	initHooksConfig()
+	initKeyConfig()
 	initPublicKeysConfig()
 	initSecretsConfig()
 	initKeepersConfig()
@@ -30,6 +101,48 @@ func Init() {
 	initPermissionRulesConfig()
 	initTemplatesConfig()
 	initTemplateRulesConfig()
+}
+
+func checkSchema(file string) {
+	configYaml, err := ioutil.ReadFile(file)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":  file,
+			"error": err,
+		}).Fatal("Failed to load configuration file!")
+	}
+
+	configJson, err := yaml.YAMLToJSON([]byte(configYaml))
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":  file,
+			"error": err,
+		}).Fatal("Failed to covert configuration to JSON!")
+	}
+
+	schemaLoader := gojsonschema.NewStringLoader(schema)
+	documentLoader := gojsonschema.NewStringLoader(string(configJson))
+	validation, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":  file,
+			"error": err,
+		}).Fatal("Failed to validate configuration file!")
+	}
+	if !validation.Valid() {
+		errors := make([]string, 0)
+		for _, err := range validation.Errors() {
+			errors = append(errors, err.String())
+		}
+		logrus.WithFields(logrus.Fields{
+			"file":   file,
+			"errors": strings.Join(errors, ", "),
+		}).Fatal("Invalid configuration file!")
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"file": file,
+	}).Info("Configuration schema checked")
 }
 
 func initRootConfig() {
@@ -49,10 +162,22 @@ func initRootConfig() {
 }
 
 func initGPGConfig() {
-	executable, err := exec.LookPath("gpg")
+	var command string
+
+	viper.Set("gpg", "")
+	viper.Set("gpg-connect-agent", "")
+
+	if !viper.IsSet("key") || viper.GetString("key") == "" {
+		command = "gpg"
+	} else {
+		command = "gpg-connect-agent"
+	}
+
+	executable, err := exec.LookPath(command)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"error": err,
+			"error":   err,
+			"command": command,
 		}).Fatal("Failed to locate GPG executable!")
 	}
 
@@ -60,7 +185,7 @@ func initGPGConfig() {
 		"executable": executable,
 	}).Info("GPG initialized")
 
-	viper.Set("gpg", executable)
+	viper.Set(command, executable)
 }
 
 func initEditorConfig() {
@@ -119,6 +244,36 @@ func initHooksConfig() {
 	viper.Set("hooks", hooks)
 }
 
+func initKeyConfig() {
+	path := viper.GetString("key")
+	if path != "" {
+		input, err := os.Open(path)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"file":  path,
+				"error": err,
+			}).Fatal("Failed to read private key!")
+		}
+		defer input.Close()
+
+		key, err := pgp.LoadASCIIArmoredPrivateKey(input)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"file":  path,
+				"error": err,
+			}).Fatal("Failed to load private key!")
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"file": path,
+		}).Info("Private key initialized")
+
+		viper.Set("key", &key)
+	} else {
+		viper.Set("key", (*pgp.PrivateKey)(nil))
+	}
+}
+
 func initPublicKeysConfig() {
 	keys := make(map[string]*pgp.PublicKey)
 	keysRoot := path.Join(GetRoot(), "keys")
@@ -141,9 +296,9 @@ func initPublicKeysConfig() {
 				input, err := os.Open(path)
 				if err != nil {
 					logrus.WithFields(logrus.Fields{
-						"path":  path,
+						"file":  path,
 						"error": err,
-					}).Fatal("Failed to load public key!")
+					}).Fatal("Failed to read public key!")
 				}
 				defer input.Close()
 
@@ -198,17 +353,11 @@ func initSecretsConfig() {
 }
 
 func initKeepersConfig() {
-	rawKeepers := viper.GetStringSlice("keepers")
-
-	if len(rawKeepers) < 1 {
-		logrus.Fatal("At least one keeper is required!")
-	}
-
 	keepers := make([]*pgp.PublicKey, 0)
 	aliases := make([]string, 0)
 
 	keys := GetPublicKeys()
-	for _, keyAlias := range rawKeepers {
+	for _, keyAlias := range viper.GetStringSlice("keepers") {
 		key, found := keys[keyAlias]
 		if !found {
 			logrus.WithFields(logrus.Fields{
@@ -235,21 +384,17 @@ func initTeamsConfig() {
 			Alias: teamAlias,
 			Keys:  make([]*pgp.PublicKey, 0),
 		}
-		if teamMapValue != nil {
-			teamMembers := teamMapValue.([]interface{})
-			for _, keySliceValue := range teamMembers {
-				if keySliceValue != nil {
-					keyAlias := keySliceValue.(string)
-					key, found := keys[keyAlias]
-					if !found {
-						logrus.WithFields(logrus.Fields{
-							"key":  keyAlias,
-							"team": teamAlias,
-						}).Fatal("Found unknown key in team!")
-					}
-					team.Keys = append(team.Keys, key)
-				}
+		teamMembers := teamMapValue.([]interface{})
+		for _, keySliceValue := range teamMembers {
+			keyAlias := keySliceValue.(string)
+			key, found := keys[keyAlias]
+			if !found {
+				logrus.WithFields(logrus.Fields{
+					"key":  keyAlias,
+					"team": teamAlias,
+				}).Fatal("Found unknown key in team!")
 			}
+			team.Keys = append(team.Keys, key)
 		}
 		teams[teamAlias] = team
 	}
@@ -270,64 +415,53 @@ func initTeamsConfig() {
 func initPermissionRulesConfig() {
 	rules := make([]PermissionRule, 0)
 
-	if _, ok := viper.Get("permissions").([]interface{}); ok {
-		keys := GetPublicKeys()
-		teams := GetTeams()
-		for _, itemSliceValue := range viper.Get("permissions").([]interface{}) {
-			item := itemSliceValue.(map[interface{}]interface{})
-			for queryStringMapKey, expressionsMapValue := range item {
-				if expressionsMapValue != nil {
-					queryString := queryStringMapKey.(string)
-					expressions := expressionsMapValue.([]interface{})
+	keys := GetPublicKeys()
+	teams := GetTeams()
+	for _, itemSliceValue := range viper.Get("permissions").([]interface{}) {
+		item := itemSliceValue.(map[interface{}]interface{})
+		for queryStringMapKey, expressionsMapValue := range item {
+			queryString := queryStringMapKey.(string)
+			expressions := expressionsMapValue.([]interface{})
 
-					var rule PermissionRule
+			var rule PermissionRule
 
-					queryParsed, err := query.Parse(queryString)
-					if err != nil {
-						logrus.WithFields(logrus.Fields{
-							"query": queryString,
-							"error": err,
-						}).Fatal("Failed to parse permissions query!")
-					}
-					rule.Query = queryParsed
-
-					rule.Expressions = make([]PermissionExpression, 0)
-					for _, expressionStringSliceValue := range expressions {
-						var expression PermissionExpression
-
-						expressionString := expressionStringSliceValue.(string)
-
-						if expressionString[0] != '+' && expressionString[0] != '-' {
-							logrus.WithFields(logrus.Fields{
-								"query":      queryString,
-								"expression": expressionString,
-							}).Fatal("Found invalid permissions expression!")
-						}
-
-						expression.Deny = expressionString[0] == '-'
-
-						expression.Keys = make([]*pgp.PublicKey, 0)
-						subject := expressionString[1:]
-						if key, found := keys[subject]; !found {
-							if team, found := teams[subject]; !found {
-								logrus.WithFields(logrus.Fields{
-									"query":      queryString,
-									"expression": expressionString,
-								}).Fatal("Found unknown key or team in permissions expression!")
-							} else {
-								expression.Keys = team.Keys
-							}
-						} else {
-							expression.Keys = append(expression.Keys, key)
-						}
-
-						rule.Expressions = append(rule.Expressions, expression)
-					}
-
-					rules = append(rules, rule)
-					break
-				}
+			queryParsed, err := query.Parse(queryString)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"query": queryString,
+					"error": err,
+				}).Fatal("Failed to parse permissions query!")
 			}
+			rule.Query = queryParsed
+
+			rule.Expressions = make([]PermissionExpression, 0)
+			for _, expressionStringSliceValue := range expressions {
+				var expression PermissionExpression
+
+				expressionString := expressionStringSliceValue.(string)
+
+				expression.Deny = expressionString[0] == '-'
+
+				expression.Keys = make([]*pgp.PublicKey, 0)
+				subject := expressionString[1:]
+				if key, found := keys[subject]; !found {
+					if team, found := teams[subject]; !found {
+						logrus.WithFields(logrus.Fields{
+							"query":      queryString,
+							"expression": expressionString,
+						}).Fatal("Found unknown key or team in permissions expression!")
+					} else {
+						expression.Keys = team.Keys
+					}
+				} else {
+					expression.Keys = append(expression.Keys, key)
+				}
+
+				rule.Expressions = append(rule.Expressions, expression)
+			}
+
+			rules = append(rules, rule)
+			break
 		}
 	}
 
@@ -421,39 +555,35 @@ func initTemplatesConfig() {
 func initTemplateRulesConfig() {
 	rules := make([]TemplateRule, 0)
 
-	if _, ok := viper.Get("templates-rules").([]interface{}); ok {
-		templates := GetTemplates()
-		for _, itemSliceValue := range viper.Get("templates-rules").([]interface{}) {
-			item := itemSliceValue.(map[interface{}]interface{})
-			for queryStringMapKey, templateAliasMapValue := range item {
-				if templateAliasMapValue != nil {
-					queryString := queryStringMapKey.(string)
-					templateAlias := templateAliasMapValue.(string)
+	templates := GetTemplates()
+	for _, itemSliceValue := range viper.Get("templates-rules").([]interface{}) {
+		item := itemSliceValue.(map[interface{}]interface{})
+		for queryStringMapKey, templateAliasMapValue := range item {
+			queryString := queryStringMapKey.(string)
+			templateAlias := templateAliasMapValue.(string)
 
-					var rule TemplateRule
+			var rule TemplateRule
 
-					queryParsed, err := query.Parse(queryString)
-					if err != nil {
-						logrus.WithFields(logrus.Fields{
-							"query": queryString,
-							"error": err,
-						}).Fatal("Failed to parse permissions query!")
-					}
-					rule.Query = queryParsed
-
-					template, found := templates[templateAlias]
-					if !found {
-						logrus.WithFields(logrus.Fields{
-							"query":    queryString,
-							"template": templateAlias,
-						}).Fatal("Found unknown template in template rule!")
-					}
-					rule.Template = template
-
-					rules = append(rules, rule)
-					break
-				}
+			queryParsed, err := query.Parse(queryString)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"query": queryString,
+					"error": err,
+				}).Fatal("Failed to parse permissions query!")
 			}
+			rule.Query = queryParsed
+
+			template, found := templates[templateAlias]
+			if !found {
+				logrus.WithFields(logrus.Fields{
+					"query":    queryString,
+					"template": templateAlias,
+				}).Fatal("Found unknown template in template rule!")
+			}
+			rule.Template = template
+
+			rules = append(rules, rule)
+			break
 		}
 	}
 
