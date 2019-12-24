@@ -292,7 +292,7 @@ func main() {
 
 	// 'rebuild' command.
 	var cmdRebuildQuery string
-	var cmdRebuildKey string
+	var cmdRebuildRecipient string
 	var cmdRebuildWorkers int
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
@@ -314,7 +314,7 @@ func main() {
 				folderOrUri = args[0]
 			}
 			core.Rebuild(
-				folderOrUri, cmdRebuildQuery, cmdRebuildKey, cmdRebuildWorkers,
+				folderOrUri, cmdRebuildQuery, cmdRebuildRecipient, cmdRebuildWorkers,
 				cmdRebuildForce, cmdRebuildDryRun)
 		},
 	}
@@ -322,7 +322,7 @@ func main() {
 		&cmdRebuildQuery, "query", "",
 		"limit rebuild to secrets matching this query")
 	cmdRebuild.PersistentFlags().StringVar(
-		&cmdRebuildKey, "key", "",
+		&cmdRebuildRecipient, "recipient", "",
 		"limit rebuild to secrets readable by this key alias (defaults to --identity)")
 	cmdRebuild.PersistentFlags().IntVar(
 		&cmdRebuildWorkers, "workers", runtime.NumCPU(),
@@ -337,7 +337,7 @@ func main() {
 	// 'list' command.
 	var cmdListLong bool
 	var cmdListQuery string
-	var cmdListKey string
+	var cmdListRecipient string
 	var cmdListIgnoreSchema bool
 	cmdList := &cobra.Command{
 		Use:     "list [<folder>|<secret URI>]",
@@ -355,7 +355,7 @@ func main() {
 				folderOrUri = args[0]
 			}
 			core.List(
-				folderOrUri, cmdListLong, cmdListQuery, cmdListKey,
+				folderOrUri, cmdListLong, cmdListQuery, cmdListRecipient,
 				cmdListIgnoreSchema)
 		},
 	}
@@ -366,7 +366,7 @@ func main() {
 		&cmdListQuery, "query", "",
 		"limit listing to secrets matching this query")
 	cmdList.PersistentFlags().StringVar(
-		&cmdListKey, "key", "",
+		&cmdListRecipient, "recipient", "",
 		"limit listing to secrets readable by this key alias (defaults to --identity)")
 	cmdList.PersistentFlags().BoolVar(
 		&cmdListIgnoreSchema, "ignore-schema", false,

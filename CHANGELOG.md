@@ -1,6 +1,9 @@
 - v? (?):
     + ...
 
+- v0.3.5 (2019-12-24):
+    + Rename --key flag (list & rebuild commands) to --recipient.
+
 - v0.3.4 (2019-12-24):
     + Set default rebuild --workers value to number of cores.
     + Show 'dry run' message when using rebuild --dru-run flag.
