@@ -1,4 +1,7 @@
 - v? (?):
+    + ...
+
+- v0.3.5 (2019-12-24):
     + Rename --key flag (list & rebuild commands) to --recipient.
 
 - v0.3.4 (2019-12-24):
