@@ -43,13 +43,16 @@ SETUP
 
 3. Except for permissions and templates, the PGP Tomb configuration is simple and self-explanatory:
    - The `root` option can be overridden using the `--root` command line flag.
+   - Optionally you can provide your identity (i.e. the alias of your PGP public key) using the `identity` option (it can be overridden using the `--identity` flag). If so, it will be used as default value of the `--key` flag for the `list` command, etc.
    - Optionally you can provide the path to your personal ASCII armored PGP secret key using the `key` option (it can be overridden using the `--key` flag). If so, decryption of secrets will be directly handled by PGP Tomb instead of using your local GPG infrastructure. This assumes `gpg-connect-agent` is properly configured.
    - Permissions (`permissions` option) for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
    - Users in the list of keepers (`keepers` option) will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
    - PGP Tomb will implicitly inject the team `all` if that name is not explicitly configured. This team will include users associated to all PGP public keys in the `keys/` folder.
    - Templates (i.e. JSON Schema and/or JSON / YAML skeletons; `templates` option) are linked to secrets using a similar strategy, however, unlike permissions, evaluation of rules stops once a match is found.
    ```
-   root: /home/carlos/pgp-tomb
+   root: /home/alice/pgp-tomb
+
+   identity:
 
    key:
 
@@ -75,13 +78,13 @@ SETUP
      - uri ~ '\.login$': login
    ```
 
-4. Optionally you can configure Bash or Zsh completions. For example, for Bash adjust your `.bashrc` as follows.
+4. Optionally you can add an alias and configure Bash or Zsh completions. For example, for Bash adjust your `.bashrc` as follows.
    ```
    ...
    source /etc/bash_completion
    source <(pgp-tomb bash)
-   export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
-   #alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT"
+   export PGP_TOMB_ROOT=/home/alice/pgp-tomb
+   alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT --identity alice"
    ```
 
    Same thing in MacOS requires some extra steps: (1) install a modern Bash and the completion extension (e.g. `port install bash bash-completion`); (2) add `/opt/local/bin/bash` to the list of allowed shells in `/etc/shells`; and (3) change your default shell (i.e. `chsh -s /opt/local/bin/bash`).
@@ -89,8 +92,8 @@ SETUP
    ...
    source /opt/local/etc/profile.d/bash_completion.sh
    source <(pgp-tomb bash)
-   export PGP_TOMB_ROOT=/home/carlos/pgp-tomb
-   #alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT"
+   export PGP_TOMB_ROOT=/home/alice/pgp-tomb
+   alias pgp-tomb="pgp-tomb --root $PGP_TOMB_ROOT --identity alice"
    ```
 
 5. Assuming a local GPG infrastructure properly configured, now you're ready to start creating and sharing secrets across your organization.

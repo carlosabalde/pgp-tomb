@@ -29,7 +29,7 @@ func List(folderOrUri string, long bool, queryString, keyAlias string, ignoreSch
 			os.Exit(1)
 		}
 	} else {
-		key = nil
+		key = config.GetIdentity()
 	}
 
 	// Define walk function.
@@ -87,22 +87,15 @@ func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey, ignor
 	}
 
 	if key != nil {
-		found := false
-		if keys, err := s.GetExpectedPublicKeys(); err == nil {
-			for _, aKey := range keys {
-				if aKey == key {
-					found = true
-					break
-				}
+		if readable, err := s.IsReadableBy(key); err == nil {
+			if !readable {
+				return
 			}
 		} else {
 			logrus.WithFields(logrus.Fields{
 				"error": err,
 				"uri":   s.GetUri(),
-			}).Error("Failed to get expected public keys!")
-			return
-		}
-		if !found {
+			}).Error("Failed to check if secret is readable!")
 			return
 		}
 	}
