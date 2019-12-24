@@ -126,7 +126,7 @@ func initConfig() {
 	}
 
 	// Validate & initialize configuration.
-	config.Init()
+	config.Init(viper.ConfigFileUsed())
 }
 
 func executeHook(alias string, command string) {

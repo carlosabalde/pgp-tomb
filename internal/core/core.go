@@ -37,7 +37,7 @@ func parseQuery(queryString string) (result query.Query) {
 func validateSchema(value string, schema *gojsonschema.Schema) (bool, []string) {
 	errors := make([]string, 0)
 
-	// This will succeed if 'value' is valid JSON since JSON is a subset of
+	// This will succeed if 'value' is valid JSON because JSON is a subset of
 	// YAML 1.2!
 	jsonValue, err := yaml.YAMLToJSON([]byte(value))
 	if err != nil {

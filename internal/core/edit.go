@@ -107,7 +107,7 @@ func md5File(path string) string {
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"path":  path,
+			"file":  path,
 		}).Fatal("Failed to open file!")
 	}
 	defer file.Close()
@@ -116,7 +116,7 @@ func md5File(path string) string {
 	if _, err := io.Copy(digest, file); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"path":  path,
+			"file":  path,
 		}).Fatal("Failed to MD5 file!")
 	}
 
