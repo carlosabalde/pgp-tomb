@@ -14,12 +14,25 @@ import (
 	"github.com/carlosabalde/pgp-tomb/internal/core/config"
 	"github.com/carlosabalde/pgp-tomb/internal/core/query"
 	"github.com/carlosabalde/pgp-tomb/internal/core/secret"
+	"github.com/carlosabalde/pgp-tomb/internal/helpers/pgp"
 )
 
-func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
+func Rebuild(folderOrUri, queryString, keyAlias string, workers int, force, dryRun bool) {
 	// Initializations.
 	checked := 0
 	queryParsed := parseQuery(queryString)
+
+	// Initialize key.
+	var key *pgp.PublicKey
+	if keyAlias != "" {
+		key = findPublicKey(keyAlias)
+		if key == nil {
+			fmt.Fprintln(os.Stderr, "Key does not exist!")
+			os.Exit(1)
+		}
+	} else {
+		key = config.GetIdentity()
+	}
 
 	// Launch workers.
 	var waitGroup sync.WaitGroup
@@ -35,7 +48,7 @@ func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
 			return err
 		}
 		if !info.IsDir() {
-			if checkFile(path, info, tasksChannel, queryParsed, force, dryRun) {
+			if checkFile(path, info, tasksChannel, queryParsed, key, force, dryRun) {
 				checked++
 			}
 		}
@@ -71,12 +84,16 @@ func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
 	waitGroup.Wait()
 
 	// Done!
-	fmt.Printf("Done! %d files checked.\n", checked)
+	if dryRun {
+		fmt.Printf("Done! %d files checked (dry run).\n", checked)
+	} else {
+		fmt.Printf("Done! %d files checked.\n", checked)
+	}
 }
 
 func checkFile(
 	path string, info os.FileInfo, tasksChannel chan func() string,
-	q query.Query, force, dryRun bool) bool {
+	q query.Query, key *pgp.PublicKey, force, dryRun bool) bool {
 	if filepath.Ext(path) == config.SecretExtension {
 		uri := strings.TrimPrefix(path, config.GetSecretsRoot())
 		uri = strings.TrimPrefix(uri, string(os.PathSeparator))
@@ -87,16 +104,32 @@ func checkFile(
 			logrus.WithFields(logrus.Fields{
 				"error": err,
 				"uri":   s.GetUri(),
-			}).Fatal("Failed to load secret!")
+			}).Error("Failed to load secret!")
 			return false
 		}
 
-		if q.Eval(s) {
-			tasksChannel <- func() string {
-				return checkSecret(s, force, dryRun)
-			}
-			return true
+		if !q.Eval(s) {
+			return false
 		}
+
+		if key != nil {
+			if readable, err := s.IsReadableBy(key); err == nil {
+				if !readable {
+					return false
+				}
+			} else {
+				logrus.WithFields(logrus.Fields{
+					"error": err,
+					"uri":   s.GetUri(),
+				}).Error("Failed to check if secret is readable!")
+				return false
+			}
+		}
+
+		tasksChannel <- func() string {
+			return checkSecret(s, force, dryRun)
+		}
+		return true
 	} else {
 		tasksChannel <- func() string {
 			return checkUnexpectFile(path, dryRun)

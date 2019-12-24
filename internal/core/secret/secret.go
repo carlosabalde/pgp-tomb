@@ -211,7 +211,7 @@ func (self *Secret) GetRecipients() (expected, unknown, rubbish, missing []strin
 
 	// Determine rubbish recipients.
 	if tmp, err := slices.Difference(current, expected); err == nil {
-		rubbish := tmp.Interface().([]string)
+		rubbish = tmp.Interface().([]string)
 		sort.Strings(rubbish)
 	} else {
 		e = errors.Wrap(err, "failed to determine rubbish recipients")
@@ -220,7 +220,7 @@ func (self *Secret) GetRecipients() (expected, unknown, rubbish, missing []strin
 
 	// Determine missing recipients.
 	if tmp, err := slices.Difference(expected, current); err == nil {
-		missing := tmp.Interface().([]string)
+		missing = tmp.Interface().([]string)
 		sort.Strings(missing)
 	} else {
 		e = errors.Wrap(err, "failed to determine missing recipients")
@@ -229,6 +229,34 @@ func (self *Secret) GetRecipients() (expected, unknown, rubbish, missing []strin
 
 	// Done!
 	return
+}
+
+func (self *Secret) IsReadableBy(key *pgp.PublicKey) (bool, error) {
+	// Try expected recipients.
+	if keys, err := self.GetExpectedPublicKeys(); err == nil {
+		for _, aKey := range keys {
+			if aKey == key {
+				return true, nil
+			}
+		}
+	} else {
+		return false, errors.Wrap(err, "failed to determine expected recipients")
+	}
+
+	// Try current recipients.
+	if currentRecipientKeyIds, err := self.GetCurrentRecipientsKeyIds(); err == nil {
+		for _, keyId := range currentRecipientKeyIds {
+			aKey := findPublicKeyByKeyId(keyId)
+			if aKey != nil && aKey == key {
+				return true, nil
+			}
+		}
+	} else {
+		return false, errors.Wrap(err, "failed to determine current recipients")
+	}
+
+	// Not readable.
+	return false, nil
 }
 
 // Implementation of 'query.Context' interface.

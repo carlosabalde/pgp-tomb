@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -67,11 +68,12 @@ __pgp-tomb_custom_func() {
 )
 
 var (
-	cfgFile string
-	verbose bool
-	root    string
-	key     string
-	rootCmd = &cobra.Command{
+	cfgFile  string
+	verbose  bool
+	root     string
+	key      string
+	identity string
+	rootCmd  = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                config.GetVersion(),
 		BashCompletionFunction: bashCompletionFunction,
@@ -187,6 +189,10 @@ func main() {
 		"override 'root' option in config file")
 	viper.BindPFlag("root", rootCmd.PersistentFlags().Lookup("root"))
 	rootCmd.PersistentFlags().StringVar(
+		&identity, "identity", "",
+		"override 'identity' option in config file")
+	viper.BindPFlag("identity", rootCmd.PersistentFlags().Lookup("identity"))
+	rootCmd.PersistentFlags().StringVar(
 		&key, "key", "",
 		"override 'key' option in config file")
 	viper.BindPFlag("key", rootCmd.PersistentFlags().Lookup("key"))
@@ -286,6 +292,7 @@ func main() {
 
 	// 'rebuild' command.
 	var cmdRebuildQuery string
+	var cmdRebuildKey string
 	var cmdRebuildWorkers int
 	var cmdRebuildForce bool
 	var cmdRebuildDryRun bool
@@ -307,15 +314,18 @@ func main() {
 				folderOrUri = args[0]
 			}
 			core.Rebuild(
-				folderOrUri, cmdRebuildQuery, cmdRebuildWorkers, cmdRebuildForce,
-				cmdRebuildDryRun)
+				folderOrUri, cmdRebuildQuery, cmdRebuildKey, cmdRebuildWorkers,
+				cmdRebuildForce, cmdRebuildDryRun)
 		},
 	}
 	cmdRebuild.PersistentFlags().StringVar(
 		&cmdRebuildQuery, "query", "",
 		"limit rebuild to secrets matching this query")
+	cmdRebuild.PersistentFlags().StringVar(
+		&cmdRebuildKey, "key", "",
+		"limit rebuild to secrets readable by this key alias (defaults to --identity)")
 	cmdRebuild.PersistentFlags().IntVar(
-		&cmdRebuildWorkers, "workers", 4,
+		&cmdRebuildWorkers, "workers", runtime.NumCPU(),
 		"set preferred number of workers")
 	cmdRebuild.PersistentFlags().BoolVar(
 		&cmdRebuildForce, "force", false,
@@ -357,7 +367,7 @@ func main() {
 		"limit listing to secrets matching this query")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListKey, "key", "",
-		"list only secrets readable by this key alias")
+		"limit listing to secrets readable by this key alias (defaults to --identity)")
 	cmdList.PersistentFlags().BoolVar(
 		&cmdListIgnoreSchema, "ignore-schema", false,
 		"skip schema validation")

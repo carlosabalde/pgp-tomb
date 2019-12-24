@@ -68,6 +68,10 @@ func GetHooks() map[string]Hook {
 	return viper.Get("hooks").(map[string]Hook)
 }
 
+func GetIdentity() *pgp.PublicKey {
+	return viper.Get("identity").(*pgp.PublicKey)
+}
+
 func GetPrivateKey() *pgp.PrivateKey {
 	return viper.Get("key").(*pgp.PrivateKey)
 }

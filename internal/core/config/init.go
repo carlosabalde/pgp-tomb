@@ -30,6 +30,9 @@ const (
     "root": {
       "type": ["string", "null"]
     },
+    "identity": {
+      "type": ["string", "null"]
+    },
     "key": {
       "type": ["string", "null"]
     },
@@ -95,6 +98,7 @@ func Init(file string) {
 	initHooksConfig()
 	initKeyConfig()
 	initPublicKeysConfig()
+	initIdentity()
 	initSecretsConfig()
 	initKeepersConfig()
 	initTeamsConfig()
@@ -335,6 +339,27 @@ func initPublicKeysConfig() {
 	viper.Set("keys", keys)
 }
 
+func initIdentity() {
+	keyAlias := viper.GetString("identity")
+	if keyAlias != "" {
+		keys := GetPublicKeys()
+		key, found := keys[keyAlias]
+		if !found {
+			logrus.WithFields(logrus.Fields{
+				"key": keyAlias,
+			}).Fatal("Unknown key used as identity!")
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"key": keyAlias,
+		}).Info("Identity initialized")
+
+		viper.Set("identity", key)
+	} else {
+		viper.Set("identity", (*pgp.PublicKey)(nil))
+	}
+}
+
 func initSecretsConfig() {
 	secretsRoot := path.Join(GetRoot(), "secrets")
 
@@ -399,6 +424,17 @@ func initTeamsConfig() {
 			}
 			teams[teamAlias] = team
 		}
+	}
+
+	if _, found := teams["all"]; !found {
+		team := Team{
+			Alias: "all",
+			Keys:  make([]*pgp.PublicKey, 0),
+		}
+		for _, key := range keys {
+			team.Keys = append(team.Keys, key)
+		}
+		teams["all"] = team
 	}
 
 	res, err := maps.KeysSlice(teams)
