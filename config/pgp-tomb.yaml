@@ -7,14 +7,6 @@ keepers:
   - bob
 
 teams:
-  all:
-    - alice
-    - bob
-    - chuck
-    - dave
-    - erin
-    - frank
-    - grace
   team-1:
     - bob
     - frank

@@ -401,6 +401,17 @@ func initTeamsConfig() {
 		}
 	}
 
+	if _, found := teams["all"]; !found {
+		team := Team{
+			Alias: "all",
+			Keys:  make([]*pgp.PublicKey, 0),
+		}
+		for _, key := range(keys) {
+			team.Keys = append(team.Keys, key)
+		}
+		teams["all"] = team
+	}
+
 	res, err := maps.KeysSlice(teams)
 	if err != nil {
 		logrus.Fatal(err)
