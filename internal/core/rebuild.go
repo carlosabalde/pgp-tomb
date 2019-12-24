@@ -71,7 +71,11 @@ func Rebuild(folderOrUri, queryString string, workers int, force, dryRun bool) {
 	waitGroup.Wait()
 
 	// Done!
-	fmt.Printf("Done! %d files checked.\n", checked)
+	if dryRun {
+		fmt.Printf("Done! %d files checked (dry run).\n", checked)
+	} else {
+		fmt.Printf("Done! %d files checked.\n", checked)
+	}
 }
 
 func checkFile(

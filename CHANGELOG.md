@@ -1,5 +1,6 @@
 - v? (?):
     + Set default rebuild --workers value to number of cores.
+    + Show 'dry run' message when using rebuild --dru-run flag.
     + ...
 
 - v0.3.3 (2019-12-24):
