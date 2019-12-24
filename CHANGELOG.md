@@ -1,6 +1,7 @@
 - v? (?):
     + Add support for private keys.
     + Validate configuration using JSON schema.
+    + Add initial support for Windows.
 
 - v0.3.1 (2019-12-05):
     + Add 'init' command.

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -169,7 +168,7 @@ func parseTags(tags []string) []secret.Tag {
 
 func main() {
 	// Initializations.
-	syscall.Umask(0077)
+	setUmask()
 
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(

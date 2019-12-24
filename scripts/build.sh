@@ -40,7 +40,11 @@ if [ -d ./cmd ]; then
                    ([ $OS == 'windows' ] && [ $ARCH == 'arm' ]); then
                     continue
                 fi
-                GOOS=$OS GOARCH=$ARCH go build -ldflags "$LD_FLAGS" -o build/$OS-$ARCH/${cmd##*/} ./cmd/${cmd##*/}
+                suffix=""
+                if [ $OS == 'windows' ]; then
+                    suffix=".exe"
+                fi
+                GOOS=$OS GOARCH=$ARCH go build -ldflags "$LD_FLAGS" -o build/$OS-$ARCH/${cmd##*/}$suffix ./cmd/${cmd##*/}
                 echo "- $OS-$ARCH finished"
             done
         done
