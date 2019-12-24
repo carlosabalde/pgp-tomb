@@ -1,4 +1,5 @@
 - v? (?):
+    + Set default rebuild --workers value to number of cores.
     + ...
 
 - v0.3.3 (2019-12-24):

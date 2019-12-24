@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -315,7 +316,7 @@ func main() {
 		&cmdRebuildQuery, "query", "",
 		"limit rebuild to secrets matching this query")
 	cmdRebuild.PersistentFlags().IntVar(
-		&cmdRebuildWorkers, "workers", 4,
+		&cmdRebuildWorkers, "workers", runtime.NumCPU(),
 		"set preferred number of workers")
 	cmdRebuild.PersistentFlags().BoolVar(
 		&cmdRebuildForce, "force", false,
