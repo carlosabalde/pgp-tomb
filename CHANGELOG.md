@@ -1,11 +1,13 @@
 - v? (?):
+    + ...
+
+- v0.3.4 (2019-12-24):
     + Set default rebuild --workers value to number of cores.
     + Show 'dry run' message when using rebuild --dru-run flag.
     + Implicitly inject 'all' team if not explicitly configured.
     + Add 'identity' option & --identity flag.
     + Add --key flag to 'rebuild' command.
     + Fix rubbish & missing recipients calculation.
-    + ...
 
 - v0.3.3 (2019-12-24):
     + Assorted configuration validation fixes.
