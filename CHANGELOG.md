@@ -1,5 +1,5 @@
 - v? (?):
-    + ...
+    + Rename --key flag (list & rebuild commands) to --recipient.
 
 - v0.3.4 (2019-12-24):
     + Set default rebuild --workers value to number of cores.

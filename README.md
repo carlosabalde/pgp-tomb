@@ -111,7 +111,7 @@ SETUP
 
    # List URIs of secrets theoretically readable by 'chuck' according with the
    # permissions defined in the current configuration.
-   $ pgp-tomb list --long --key chuck
+   $ pgp-tomb list --long --recipient chuck
 
    # Check all secrets and re-encrypt them if current recipients don't match
    # the list of expected recipients according with the current configuration.
