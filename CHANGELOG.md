@@ -1,6 +1,9 @@
 - v? (?):
     + ...
 
+- v0.3.3 (2019-12-24):
+    + Assorted configuration validation fixes.
+
 - v0.3.2 (2019-12-24):
     + Add support for private keys.
     + Validate configuration using JSON schema.
