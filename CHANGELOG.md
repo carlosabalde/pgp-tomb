@@ -1,8 +1,10 @@
 - v? (?):
+    + ...
+
+- v0.3.6 (2019-12-25):
     + Ignore case sensitivity when comparing tag names.
     + Use 'get' as fallback when a matching command is not found.
     + Serialize concurrent decrypts of private key.
-    + ...
 
 - v0.3.5 (2019-12-24):
     + Rename --key flag (list & rebuild commands) to --recipient.
