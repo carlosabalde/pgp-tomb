@@ -1,4 +1,5 @@
 - v? (?):
+    + Ignore case sensitivity when comparing tag names.
     + ...
 
 - v0.3.5 (2019-12-24):
@@ -6,7 +7,7 @@
 
 - v0.3.4 (2019-12-24):
     + Set default rebuild --workers value to number of cores.
-    + Show 'dry run' message when using rebuild --dru-run flag.
+    + Show 'dry run' message when using rebuild --dry-run flag.
     + Implicitly inject 'all' team if not explicitly configured.
     + Add 'identity' option & --identity flag.
     + Add --key flag to 'rebuild' command.

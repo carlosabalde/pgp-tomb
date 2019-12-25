@@ -264,8 +264,9 @@ func (self *Secret) GetIdentifier(key string) string {
 	if key == "uri" {
 		return self.uri
 	} else if strings.HasPrefix(key, "tags.") {
+		name := strings.ToLower(key[5:])
 		for _, tag := range self.tags {
-			if tag.Name == key[5:] {
+			if strings.ToLower(tag.Name) == name {
 				return tag.Value
 			}
 		}
