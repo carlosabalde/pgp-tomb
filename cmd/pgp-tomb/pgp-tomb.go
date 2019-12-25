@@ -76,6 +76,7 @@ var (
 	rootCmd  = &cobra.Command{
 		Use:                    "pgp-tomb",
 		Version:                config.GetVersion(),
+		SilenceErrors:          true,
 		BashCompletionFunction: bashCompletionFunction,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
@@ -426,5 +427,10 @@ func main() {
 	// Register commands & execute.
 	rootCmd.AddCommand(
 		cmdGet, cmdSet, cmdEdit, cmdRebuild, cmdList, cmdInit, cmdBash, cmdZsh)
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		args := append([]string{"get"}, os.Args[1:]...)
+		rootCmd.SetArgs(args)
+		rootCmd.SilenceErrors = false
+		rootCmd.Execute()
+	}
 }

@@ -1,5 +1,6 @@
 - v? (?):
     + Ignore case sensitivity when comparing tag names.
+    + Use 'get' as fallback when a matching command is not found.
     + ...
 
 - v0.3.5 (2019-12-24):
