@@ -1,12 +1,17 @@
 - v? (?):
     + ...
 
+- v0.3.6 (2019-12-25):
+    + Ignore case sensitivity when comparing tag names.
+    + Use 'get' as fallback when a matching command is not found.
+    + Serialize concurrent decrypts of private key.
+
 - v0.3.5 (2019-12-24):
     + Rename --key flag (list & rebuild commands) to --recipient.
 
 - v0.3.4 (2019-12-24):
     + Set default rebuild --workers value to number of cores.
-    + Show 'dry run' message when using rebuild --dru-run flag.
+    + Show 'dry run' message when using rebuild --dry-run flag.
     + Implicitly inject 'all' team if not explicitly configured.
     + Add 'identity' option & --identity flag.
     + Add --key flag to 'rebuild' command.

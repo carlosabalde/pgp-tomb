@@ -6,14 +6,20 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 )
 
+var promptMutex = &sync.Mutex{}
+
 func Decrypt(agent string, input io.Reader, output io.Writer, key *PrivateKey) error {
 	promptError := false
 	prompt := func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
+		promptMutex.Lock()
+		defer promptMutex.Unlock()
+
 		if symmetric {
 			return getPassphrase(agent, promptError)
 		}
