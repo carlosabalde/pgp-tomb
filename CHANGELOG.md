@@ -3,6 +3,7 @@
     + Ensure duplicated tags are not allowed.
     + Add 'tags' option.
     + Validate tags when listing or editing secrets.
+    + Allow edition of tags using external editor.
     + ...
 
 - v0.3.6 (2019-12-25):

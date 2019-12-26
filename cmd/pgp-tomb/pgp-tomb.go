@@ -160,11 +160,12 @@ func executeHook(alias string, command string) {
 func parseTags(tags []string) []secret.Tag {
 	result := make([]secret.Tag, 0)
 	for _, tag := range tags {
-		items := strings.Split(tag, ":")
-		result = append(result, secret.Tag{
-			Name:  strings.TrimSpace(items[0]),
-			Value: strings.TrimSpace(items[1]),
-		})
+		if index := strings.Index(tag, ":"); index > 0 {
+			result = append(result, secret.Tag{
+				Name:  strings.TrimSpace(tag[:index]),
+				Value: strings.TrimSpace(tag[index+1:]),
+			})
+		}
 	}
 	return result
 }
