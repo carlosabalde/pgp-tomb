@@ -13,17 +13,17 @@ import (
 )
 
 func Set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) {
-	if !set(uri, inputPath, tags, ignoreSchema) {
-		os.Exit(1)
-	}
-	fmt.Println("Done!")
-}
-
-func set(uri, inputPath string, tags []secret.Tag, ignoreSchema bool) bool {
-	// Initializations.
 	s := secret.New(uri)
 	s.SetTags(tags)
 
+	if !set(s, inputPath, ignoreSchema) {
+		os.Exit(1)
+	}
+
+	fmt.Println("Done!")
+}
+
+func set(s *secret.Secret, inputPath string, ignoreSchema bool) bool {
 	// Initialize input reader.
 	var input io.Reader
 	if inputPath == "" {

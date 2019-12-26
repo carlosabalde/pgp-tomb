@@ -63,7 +63,7 @@ func (self *Secret) unserializeTags(data []byte) error {
 	var tags []Tag
 	for name, value := range tagsMap {
 		tags = append(tags, Tag{
-			Name: name,
+			Name:  name,
 			Value: value,
 		})
 	}

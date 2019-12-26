@@ -278,7 +278,7 @@ func main() {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			tags := parseTags(cmdEditTags)
-			core.Edit(args[0], cmdEditDropTags || len(tags) > 0, tags, cmdEditIgnoreSchema)
+			core.Edit(args[0], cmdEditDropTags, tags, cmdEditIgnoreSchema)
 		},
 	}
 	cmdEdit.PersistentFlags().BoolVar(
