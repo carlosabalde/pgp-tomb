@@ -66,6 +66,14 @@ func (self *Secret) GetTags() []Tag {
 	return self.tags
 }
 
+func (self *Secret) GetSerializedTags() (string, error) {
+	data, err := self.serializeTags()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to serialize tags")
+	}
+	return string(data), nil
+}
+
 func (self *Secret) SetTags(tags []Tag) {
 	self.tags = make([]Tag, 0)
 
