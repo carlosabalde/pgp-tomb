@@ -67,7 +67,20 @@ func (self *Secret) GetTags() []Tag {
 }
 
 func (self *Secret) SetTags(tags []Tag) {
-	self.tags = tags
+	self.tags = make([]Tag, 0)
+
+	names := make(map[string]bool)
+	for _, tag := range tags {
+		name := strings.ToLower(tag.Name)
+		if _, found := names[name]; !found {
+			names[name] = true
+			self.tags = append(self.tags, tag)
+		}
+	}
+
+	sort.Slice(self.tags, func(i, j int) bool {
+		return self.tags[i].Name < self.tags[j].Name
+	})
 }
 
 func (self *Secret) GetPath() string {
