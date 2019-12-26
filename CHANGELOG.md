@@ -1,6 +1,7 @@
 - v? (?):
     + Store tags using a simple JSON object.
     + Ensure duplicated tags are not allowed.
+    + Add 'tags' option.
     + ...
 
 - v0.3.6 (2019-12-25):

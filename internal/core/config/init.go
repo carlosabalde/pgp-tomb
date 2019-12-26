@@ -20,74 +20,90 @@ import (
 )
 
 const (
-	schema = `
-{
-  "required": [
-    "keepers"
-  ],
-  "type": "object",
-  "properties": {
-    "root": {
-      "type": ["string", "null"]
-    },
-    "identity": {
-      "type": ["string", "null"]
-    },
-    "key": {
-      "type": ["string", "null"]
-    },
-    "keepers": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "minItems": 1
-    },
-    "teams": {
-      "type": ["object", "null"],
-      "patternProperties": {
-        ".*": {
-          "type": ["array", "null"],
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "permissions": {
-      "type": ["array", "null"],
-      "items": {
-        "type": "object",
-        "minProperties": 1,
-        "maxProperties": 1,
-        "patternProperties": {
-          ".*": {
-            "type": ["array", "null"],
-            "items": {
-              "type": "string",
-              "pattern": "^(?:\\+|\\-).+"
-            }
-          }
-        }
-      }
-    },
-    "templates": {
-      "type": ["array", "null"],
-      "items": {
-        "type": "object",
-        "minProperties": 1,
-        "maxProperties": 1,
-        "patternProperties": {
-          ".*": {
-            "type": "string"
-          }
-        }
-      }
-    }
-  },
-  "additionalProperties": false
-}
-`
+	configSchema = `
+		{
+		  "required": [
+		    "keepers"
+		  ],
+		  "type": "object",
+		  "properties": {
+		    "root": {
+		      "type": ["string", "null"]
+		    },
+		    "identity": {
+		      "type": ["string", "null"]
+		    },
+		    "key": {
+		      "type": ["string", "null"]
+		    },
+		    "keepers": {
+		      "type": "array",
+		      "items": {
+		        "type": "string"
+		      },
+		      "minItems": 1
+		    },
+		    "teams": {
+		      "type": ["object", "null"],
+		      "patternProperties": {
+		        ".*": {
+		          "type": ["array", "null"],
+		          "items": {
+		            "type": "string"
+		          }
+		        }
+		      }
+		    },
+		    "tags": {
+		      "type": ["string", "null"]
+		    },
+		    "permissions": {
+		      "type": ["array", "null"],
+		      "items": {
+		        "type": "object",
+		        "minProperties": 1,
+		        "maxProperties": 1,
+		        "patternProperties": {
+		          ".*": {
+		            "type": ["array", "null"],
+		            "items": {
+		              "type": "string",
+		              "pattern": "^(?:\\+|\\-).+"
+		            }
+		          }
+		        }
+		      }
+		    },
+		    "templates": {
+		      "type": ["array", "null"],
+		      "items": {
+		        "type": "object",
+		        "minProperties": 1,
+		        "maxProperties": 1,
+		        "patternProperties": {
+		          ".*": {
+		            "type": "string"
+		          }
+		        }
+		      }
+		    }
+		  },
+		  "additionalProperties": false
+		}
+		`
+
+	defaultTagsSchema = `
+		{
+		  "type": "object",
+		  "required": [],
+		  "patternProperties": {
+		    ".*": {
+		      "type": "string"
+		    }
+		  },
+		  "additionalProperties": true
+		}
+		`
 )
 
 func Init(file string) {
@@ -102,6 +118,7 @@ func Init(file string) {
 	initSecretsConfig()
 	initKeepersConfig()
 	initTeamsConfig()
+	initTagsConfig()
 	initPermissionRulesConfig()
 	initTemplatesConfig()
 	initTemplateRulesConfig()
@@ -124,7 +141,7 @@ func checkSchema(file string) {
 		}).Fatal("Failed to covert configuration to JSON!")
 	}
 
-	schemaLoader := gojsonschema.NewStringLoader(schema)
+	schemaLoader := gojsonschema.NewStringLoader(configSchema)
 	documentLoader := gojsonschema.NewStringLoader(string(configJson))
 	validation, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {
@@ -448,6 +465,25 @@ func initTeamsConfig() {
 	}).Info("Teams initialized")
 
 	viper.Set("teams", teams)
+}
+
+func initTagsConfig() {
+	schemaString := viper.GetString("tags")
+	if schemaString == "" {
+		schemaString = defaultTagsSchema
+	}
+
+	schemaLoader := gojsonschema.NewStringLoader(schemaString)
+	schema, err := gojsonschema.NewSchema(schemaLoader)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Fatal("Failed to load tags schema!")
+	}
+
+	logrus.Info("Tags initialized")
+
+	viper.Set("tags", schema)
 }
 
 func initPermissionRulesConfig() {

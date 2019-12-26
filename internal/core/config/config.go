@@ -92,6 +92,10 @@ func GetTeams() map[string]Team {
 	return viper.Get("teams").(map[string]Team)
 }
 
+func GetTags() *gojsonschema.Schema {
+	return viper.Get("tags").(*gojsonschema.Schema)
+}
+
 func GetPermissionRules() []PermissionRule {
 	return viper.Get("permission-rules").([]PermissionRule)
 }

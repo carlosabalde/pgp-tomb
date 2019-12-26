@@ -28,6 +28,8 @@ keepers:
 
 teams:
 
+tags:
+
 permissions:
 
 templates:
