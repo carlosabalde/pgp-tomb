@@ -103,7 +103,7 @@ func checkFile(
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"error": err,
-				"uri":   s.GetUri(),
+				"uri":   uri,
 			}).Error("Failed to load secret!")
 			return false
 		}

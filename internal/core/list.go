@@ -77,7 +77,7 @@ func listSecret(path string, long bool, q query.Query, key *pgp.PublicKey, ignor
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err,
-			"uri":   s.GetUri(),
+			"uri":   uri,
 		}).Error("Failed to load secret!")
 		return
 	}
