@@ -45,6 +45,7 @@ SETUP
    - The `root` option can be overridden using the `--root` command line flag.
    - Optionally you can provide your identity (i.e. the alias of your PGP public key) using the `identity` option (it can be overridden using the `--identity` flag). If so, it will be used as default value of the `--key` flag for the `list` command, etc.
    - Optionally you can provide the path to your personal ASCII armored PGP secret key using the `key` option (it can be overridden using the `--key` flag). If so, decryption of secrets will be directly handled by PGP Tomb instead of using your local GPG infrastructure. This assumes `gpg-connect-agent` is properly configured.
+   - Optionally you can provide a JSON Schema validator using the `tags` option. If so, it will be used to check tags constraints.
    - Permissions (`permissions` option) for a particular secret are computed matching it (i.e. URI, tags, etc.) against each rule in the configuration. When a match is found, the list of recipients is updated adding (`+` prefix) or removing (`-` prefix) team members / individual users, and then the rule evaluation continues. Obviously order is relevant both for rules as well as for expressions associated to each rule.
    - Users in the list of keepers (`keepers` option) will always be part of the list of recipients (and at least one keeper is required in a valid configuration).
    - PGP Tomb will implicitly inject the team `all` if that name is not explicitly configured. This team will include users associated to all PGP public keys in the `keys/` folder.
@@ -67,10 +68,25 @@ SETUP
      team-2:
        - chuck
 
+   tags: |
+     {
+       "type": "object",
+       "required": [
+         "type"
+       ],
+       "properties": {
+         "type": {
+           "type": "string",
+           "enum": ["ACME", "Globex", "Hooli"]
+         }
+       },
+       "additionalProperties": true
+     }
+
    permissions:
      - uri ~ '^foo/':
          - +team-1
-     - uri ~ '^foo/bar/' && tags.type != 'acme':
+     - uri ~ '^foo/bar/' && tags.type != 'ACME':
          - -bob
          - +team-2
 

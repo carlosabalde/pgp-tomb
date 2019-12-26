@@ -173,8 +173,22 @@ func renderSecretDetails(s *secret.Secret, ignoreSchema bool) {
 	}
 
 	// Render tags.
+	var decoration string
+	if !ignoreSchema {
+		if serializedTags, err := s.GetSerializedTags(); err != nil {
+			decoration = "?"
+		} else {
+			if valid, _ := validateSchema(serializedTags, config.GetTags()); !valid {
+				decoration = "✗"
+			} else {
+				decoration = "✓"
+			}
+		}
+	} else {
+		decoration = "?"
+	}
+	fmt.Printf("  `-- tags %s\n", decoration)
 	tags := s.GetTags()
-	fmt.Println("  `-- tags")
 	for i, tag := range tags {
 		decoration := "|"
 		if i == len(tags)-1 {

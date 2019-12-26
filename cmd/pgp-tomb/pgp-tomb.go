@@ -160,11 +160,12 @@ func executeHook(alias string, command string) {
 func parseTags(tags []string) []secret.Tag {
 	result := make([]secret.Tag, 0)
 	for _, tag := range tags {
-		items := strings.Split(tag, ":")
-		result = append(result, secret.Tag{
-			Name:  strings.TrimSpace(items[0]),
-			Value: strings.TrimSpace(items[1]),
-		})
+		if index := strings.Index(tag, ":"); index > 0 {
+			result = append(result, secret.Tag{
+				Name:  strings.TrimSpace(tag[:index]),
+				Value: strings.TrimSpace(tag[index+1:]),
+			})
+		}
 	}
 	return result
 }
@@ -256,7 +257,7 @@ func main() {
 		"tag secret using 'name: value' pair")
 	cmdSet.PersistentFlags().BoolVar(
 		&cmdSetIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'edit' command.
 	var cmdEditDropTags bool
@@ -278,7 +279,7 @@ func main() {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			tags := parseTags(cmdEditTags)
-			core.Edit(args[0], cmdEditDropTags || len(tags) > 0, tags, cmdEditIgnoreSchema)
+			core.Edit(args[0], cmdEditDropTags, tags, cmdEditIgnoreSchema)
 		},
 	}
 	cmdEdit.PersistentFlags().BoolVar(
@@ -289,7 +290,7 @@ func main() {
 		"tag secret using 'name: value' pair")
 	cmdEdit.PersistentFlags().BoolVar(
 		&cmdEditIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'rebuild' command.
 	var cmdRebuildQuery string
@@ -371,7 +372,7 @@ func main() {
 		"limit listing to secrets readable by this key alias (defaults to --identity)")
 	cmdList.PersistentFlags().BoolVar(
 		&cmdListIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'init' command.
 	cmdInit := &cobra.Command{

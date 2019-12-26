@@ -1,6 +1,13 @@
 - v? (?):
     + ...
 
+- v0.3.7 (2019-12-26):
+    + Store tags using a simple JSON object.
+    + Ensure duplicated tags are not allowed.
+    + Add 'tags' option.
+    + Validate tags when listing or editing secrets.
+    + Allow edition of tags using external editor.
+
 - v0.3.6 (2019-12-25):
     + Ignore case sensitivity when comparing tag names.
     + Use 'get' as fallback when a matching command is not found.

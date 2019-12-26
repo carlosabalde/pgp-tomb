@@ -21,10 +21,25 @@ teams:
     - chuck
     - dave
 
+tags: |
+  {
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": ["ACME", "Globex", "Hooli"]
+      }
+    },
+    "additionalProperties": true
+  }
+
 permissions:
   - uri ~ '^foo/':
       - +team-1
-  - uri ~ '^foo/bar/lorem ipsum\.txt$' && tags.type != 'acme':
+  - uri ~ '^foo/bar/lorem ipsum\.txt$' && tags.type != 'ACME':
       - -team-1
       - +chuck
 
