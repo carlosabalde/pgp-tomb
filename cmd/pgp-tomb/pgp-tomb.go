@@ -256,7 +256,7 @@ func main() {
 		"tag secret using 'name: value' pair")
 	cmdSet.PersistentFlags().BoolVar(
 		&cmdSetIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'edit' command.
 	var cmdEditDropTags bool
@@ -289,7 +289,7 @@ func main() {
 		"tag secret using 'name: value' pair")
 	cmdEdit.PersistentFlags().BoolVar(
 		&cmdEditIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'rebuild' command.
 	var cmdRebuildQuery string
@@ -371,7 +371,7 @@ func main() {
 		"limit listing to secrets readable by this key alias (defaults to --identity)")
 	cmdList.PersistentFlags().BoolVar(
 		&cmdListIgnoreSchema, "ignore-schema", false,
-		"skip schema validation")
+		"skip schema validations, both for tags and secrets")
 
 	// 'init' command.
 	cmdInit := &cobra.Command{
