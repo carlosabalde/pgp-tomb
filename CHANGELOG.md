@@ -1,6 +1,9 @@
 - v? (?):
     + ...
 
+- v0.3.9 (2019-12-28):
+    + Add JSON output to 'list' command.
+
 - v0.3.8 (2019-12-26):
     + Add some disgraceful fixes.
 

@@ -112,8 +112,8 @@ func editTags(s *secret.Secret) {
 	for _, tag := range s.GetTags() {
 		if _, err := fmt.Fprintf(output, "%s: %s\n", tag.Name, tag.Value); err != nil {
 			logrus.WithFields(logrus.Fields{
-				"file": output.Name(),
-				"error":  err,
+				"file":  output.Name(),
+				"error": err,
 			}).Fatal("Failed to dump tags!")
 		}
 	}
@@ -124,8 +124,8 @@ func editTags(s *secret.Secret) {
 	items, err := ioutil.ReadFile(output.Name())
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"file": output.Name(),
-			"error":  err,
+			"file":  output.Name(),
+			"error": err,
 		}).Fatal("Failed to load tags!")
 	}
 	tags := make([]secret.Tag, 0)
