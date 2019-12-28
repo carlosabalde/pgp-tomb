@@ -320,8 +320,8 @@ func main() {
 				cmdRebuildForce, cmdRebuildDryRun)
 		},
 	}
-	cmdRebuild.PersistentFlags().StringVar(
-		&cmdRebuildQuery, "query", "",
+	cmdRebuild.PersistentFlags().StringVarP(
+		&cmdRebuildQuery, "query", "q", "",
 		"limit rebuild to secrets matching this query")
 	cmdRebuild.PersistentFlags().StringVar(
 		&cmdRebuildRecipient, "recipient", "",
@@ -341,6 +341,7 @@ func main() {
 	var cmdListQuery string
 	var cmdListRecipient string
 	var cmdListIgnoreSchema bool
+	var cmdListJson bool
 	cmdList := &cobra.Command{
 		Use:     "list [<folder>|<secret URI>]",
 		Short:   "List secrets",
@@ -358,14 +359,14 @@ func main() {
 			}
 			core.List(
 				folderOrUri, cmdListLong, cmdListQuery, cmdListRecipient,
-				cmdListIgnoreSchema)
+				cmdListIgnoreSchema, cmdListJson)
 		},
 	}
 	cmdList.PersistentFlags().BoolVarP(
 		&cmdListLong, "long", "l", false,
 		"list using the long format (requires decryption for schema validation)")
-	cmdList.PersistentFlags().StringVar(
-		&cmdListQuery, "query", "",
+	cmdList.PersistentFlags().StringVarP(
+		&cmdListQuery, "query", "q", "",
 		"limit listing to secrets matching this query")
 	cmdList.PersistentFlags().StringVar(
 		&cmdListRecipient, "recipient", "",
@@ -373,6 +374,9 @@ func main() {
 	cmdList.PersistentFlags().BoolVar(
 		&cmdListIgnoreSchema, "ignore-schema", false,
 		"skip schema validations, both for tags and secrets")
+	cmdList.PersistentFlags().BoolVarP(
+		&cmdListJson, "json", "j", false,
+		"enable JSON output")
 
 	// 'init' command.
 	cmdInit := &cobra.Command{
