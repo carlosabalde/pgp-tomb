@@ -18,7 +18,7 @@ func TestMatch(t *testing.T) {
 		identifier string
 		regexp     string
 		result     bool
-		string string
+		string     string
 	}{
 		{"foo", "^42$", true, "(foo ~ '^42$')"},
 		{"foo", "^3.14$", false, "(foo ~ '^3.14$')"},

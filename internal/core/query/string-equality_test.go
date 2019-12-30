@@ -18,7 +18,7 @@ func TestEqual(t *testing.T) {
 		query   Query
 		context Context
 		result  bool
-		string string
+		string  string
 	}{
 		{Equal("foo", "42"), context1, true, "(foo == '42')"},
 		{Equal("foo", "3.14"), context1, false, "(foo == '3.14')"},
