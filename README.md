@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/carlosabalde/pgp-tomb.svg?branch=dev)](https://travis-ci.org/carlosabalde/pgp-tomb)
-[![codecov](https://codecov.io/gh/carlosabalde/pgp-tomb/branch/dev/graph/badge.svg)](https://codecov.io/gh/carlosabalde/pgp-tomb)
+[![Build Status](https://travis-ci.org/carlosabalde/pgp-tomb.svg?branch=master)](https://travis-ci.org/carlosabalde/pgp-tomb)
+[![codecov](https://codecov.io/gh/carlosabalde/pgp-tomb/branch/master/graph/badge.svg)](https://codecov.io/gh/carlosabalde/pgp-tomb)
 [![Go Report Card](https://goreportcard.com/badge/github.com/carlosabalde/pgp-tomb)](https://goreportcard.com/report/github.com/carlosabalde/pgp-tomb)
 
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
