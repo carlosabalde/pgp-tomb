@@ -20,7 +20,7 @@ all: help
 
 .PHONY: help
 help:
-	@echo 'make docker - launch Docker shell'
+	@echo 'make shell - launch Docker shell'
 	@echo 'make build - build $(PROJECT) for following OS-ARCH pairs: $(XC_OS) / $(XC_ARCH) '
 	@echo 'make build-dev - build $(PROJECT) for OS-ARCH set by GOOS and GOARCH env variables'
 	@echo 'make fmt - run gofmt & goimports'
@@ -29,9 +29,13 @@ help:
 	@echo 'make test - run tests'
 	@echo 'make dist - build & create packages with hashsums'
 
-.PHONY: docker
-docker:
-	@scripts/docker.sh
+.PHONY: shell
+shell:
+	@scripts/docker.sh shell
+
+.PHONY: travis
+travis:
+	@scripts/docker.sh travis
 
 .PHONY: build
 build:

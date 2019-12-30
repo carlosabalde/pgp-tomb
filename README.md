@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/carlosabalde/pgp-tomb.svg?branch=dev)](https://travis-ci.org/carlosabalde/pgp-tomb)
+[![codecov](https://codecov.io/gh/carlosabalde/pgp-tomb/branch/dev/graph/badge.svg)](https://codecov.io/gh/carlosabalde/pgp-tomb)
 [![Go Report Card](https://goreportcard.com/badge/github.com/carlosabalde/pgp-tomb)](https://goreportcard.com/report/github.com/carlosabalde/pgp-tomb)
 
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
@@ -139,7 +141,7 @@ SETUP
 DEVELOPMENT
 ===========
 
-Running `make docker` you can build & connect to a handy Docker container useful to ease development and packaging phases. This is what you need to know:
+Running `make shell` you can build & connect to a handy Docker container useful to ease development and packaging phases. This is what you need to know:
 
 - Once connected to the container you can build the project and execute it as follows.
   ```

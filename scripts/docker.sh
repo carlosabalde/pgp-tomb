@@ -10,6 +10,10 @@ if [ -z "$ROOT" ]; then
     exit 1
 fi
 
+if [ ! -z "$1" ]; then
+    ACTION="$1"
+fi
+
 cd "$ROOT"
 
 if [ ! "$(docker images -q $IMAGE_NAME 2> /dev/null)" ]; then
@@ -32,8 +36,16 @@ if [ "$(docker ps -a -q -f status=exited -f name=$CONTAINER_NAME)" ]; then
     docker container start $CONTAINER_NAME
 fi
 
-echo '> Connecting to container...'
-docker exec \
-    --tty \
-    --interactive \
-    $CONTAINER_NAME /bin/bash
+if [ "$ACTION" == 'shell' ]; then
+    echo '> Connecting to container...'
+    docker exec \
+        --tty \
+        --interactive \
+        $CONTAINER_NAME /bin/bash
+elif [ "$ACTION" == 'travis' ]; then
+    echo '> Running Travis stuff...'
+    docker exec \
+        $CONTAINER_NAME /bin/bash -c '\
+            cd /mnt; \
+            make test;'
+fi
