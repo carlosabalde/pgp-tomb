@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/carlosabalde/pgp-tomb)](https://goreportcard.com/report/github.com/carlosabalde/pgp-tomb)
+
 **PGP Tomb is a minimalistic multi-platform command line secrets manager built on top of PGP**. It was created just for fun, mainly as an excuse to play with Go for the first time. Nevertheless, it's fully functional and actively used. Highlights:
 
 - Secrets (i.e. passwords, bank accounts, software licenses, PDF documents, etc.) are stored in the file system as **binary PGP files encrypted & gzipped using one or more public keys** (i.e. recipients). You can create as many tombs (i.e. collections of secrets) as needed.
