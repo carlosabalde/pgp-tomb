@@ -177,7 +177,7 @@ func main() {
 	// Customize version template.
 	rootCmd.SetVersionTemplate(fmt.Sprintf(
 		"PGP Tomb version {{.Version}} (%s)\n"+
-			"Copyright (c) 2019 Carlos Abalde\n", config.GetRevision()))
+			"Copyright (c) 2019-2020 Carlos Abalde\n", config.GetRevision()))
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringVarP(
