@@ -21,6 +21,7 @@ all: help
 .PHONY: help
 help:
 	@echo 'make shell - launch Docker shell'
+	@echo 'make travis - run Travis stuff in Docker container'
 	@echo 'make build - build $(PROJECT) for following OS-ARCH pairs: $(XC_OS) / $(XC_ARCH) '
 	@echo 'make build-dev - build $(PROJECT) for OS-ARCH set by GOOS and GOARCH env variables'
 	@echo 'make fmt - run gofmt & goimports'
