@@ -7,9 +7,12 @@ if [ -z "$ROOT" ]; then
     exit 1
 fi
 
-TEST_PATTERN='.'
-TEST_OPTIONS="-v -failfast -race -coverprofile=$ROOT/coverage.txt -covermode=atomic"
+TEST_OPTIONS="-failfast -race -coverprofile=$ROOT/coverage.txt -covermode=atomic"
 TEST_TIMEOUT='2m'
 SOURCE_FILES='./...'
+
+if [ -z "$TEST_PATTERN" ]; then
+    TEST_PATTERN='.'
+fi
 
 go test $TEST_OPTIONS $SOURCE_FILES -run $TEST_PATTERN -timeout=$TEST_TIMEOUT

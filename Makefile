@@ -71,7 +71,7 @@ mod:
 
 .PHONY: test
 test:
-	@scripts/test.sh
+	@scripts/test.sh '$(TEST_PATTERN)'
 
 .PHONY: dist
 dist:
