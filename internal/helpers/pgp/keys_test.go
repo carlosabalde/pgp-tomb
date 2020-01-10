@@ -97,7 +97,7 @@ func TestGetRecipientKeyIdsForEncryptedMessage(t *testing.T) {
 			assert.ElementsMatch(
 				t,
 				keyIds,
-				[]uint64 {
+				[]uint64{
 					uint64(14417399214119891650),
 					uint64(1763358573985919020),
 					uint64(4547273708913783244),

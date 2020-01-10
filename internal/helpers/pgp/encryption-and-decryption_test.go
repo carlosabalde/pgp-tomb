@@ -36,7 +36,7 @@ func TestEncryptAndDecrypt(t *testing.T) {
 				err := Encrypt(
 					bytes.NewBufferString(secret),
 					output,
-					[]*PublicKey{ &publicKey })
+					[]*PublicKey{&publicKey})
 				if assert.NoError(t, err) {
 					decrypt(bytes.NewBufferString(output.String()))
 				}
