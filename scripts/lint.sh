@@ -2,7 +2,7 @@
 
 set -e
 
-LINT_VERSION=1.15.0
+LINT_VERSION=1.36.0
 
 if [ -z "$ROOT" ]; then
     echo 'Missing environment variables!'

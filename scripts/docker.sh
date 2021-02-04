@@ -2,8 +2,8 @@
 
 set -e
 
-IMAGE_NAME='pgp-tomb-golang:latest'
-CONTAINER_NAME='pgp-tomb-golang'
+IMAGE_NAME='pgp-tomb:latest'
+CONTAINER_NAME='pgp-tomb'
 
 if [ -z "$ROOT" ]; then
     echo 'Missing environment variables!'
