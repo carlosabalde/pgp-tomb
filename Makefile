@@ -31,6 +31,7 @@ help:
 	@( \
 		echo 'Host targets:'; \
 		echo '  shell - launch Docker shell.'; \
+		echo '  ci - run CI stuff in Docker container.'; \
 		echo; \
 		echo 'Container targets:'; \
 		echo '  build - build for the following OS-architecture pairs: $(BUILD_OSS) / $(BUILD_ARCHS).'; \
@@ -81,6 +82,19 @@ shell: docker
 			--interactive \
 			--workdir /mnt \
 			$(DOCKER_CONTAINER_NAME) /bin/bash; \
+	)
+
+.PHONY: ci
+ci: docker
+	@( \
+		set -e; \
+		\
+		echo '> Running CI stuff in Docker container...'; \
+		docker exec \
+			--workdir /mnt \
+			$(DOCKER_CONTAINER_NAME) /bin/bash -c ' \
+				set -e; \
+				make test'; \
 	)
 
 .PHONY: build
