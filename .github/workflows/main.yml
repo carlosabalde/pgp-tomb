@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+
+    container: golang:1.16.4-buster
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build, test & push code coverage
+        run: |
+          make test
+          bash <(curl -s https://codecov.io/bash) -t ed11b3fa-195a-458b-b428-1884ce416687
