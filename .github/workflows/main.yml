@@ -15,4 +15,6 @@ jobs:
 
       - name: Build, test & push code coverage
         run: |
+          make test
           exit 0
+          bash <(curl -s https://codecov.io/bash) -t ed11b3fa-195a-458b-b428-1884ce416687
