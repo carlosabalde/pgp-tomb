@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Execute CI stuff & push code coverage
+      - name: Execute tests
         run: |
-          make ci
-          bash <(curl -s https://codecov.io/bash) -t ed11b3fa-195a-458b-b428-1884ce416687
+          make ci-tests

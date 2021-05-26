@@ -31,7 +31,7 @@ help:
 	@( \
 		echo 'Host targets:'; \
 		echo '  shell - launch Docker shell.'; \
-		echo '  ci - run CI stuff in Docker container.'; \
+		echo '  ci-tests - run CI tests in Docker container.'; \
 		echo; \
 		echo 'Container targets:'; \
 		echo '  build - build for the following OS-architecture pairs: $(BUILD_OSS) / $(BUILD_ARCHS).'; \
@@ -84,17 +84,18 @@ shell: docker
 			$(DOCKER_CONTAINER_NAME) /bin/bash; \
 	)
 
-.PHONY: ci
-ci: docker
+.PHONY: ci-tests
+ci-tests: docker
 	@( \
 		set -e; \
 		\
-		echo '> Running CI stuff in Docker container...'; \
+		echo '> Running CI tests in Docker container...'; \
 		docker exec \
 			--workdir /mnt \
 			$(DOCKER_CONTAINER_NAME) /bin/bash -c ' \
 				set -e; \
-				make test'; \
+				make test; \
+				bash <(curl -s https://codecov.io/bash) -t ed11b3fa-195a-458b-b428-1884ce416687'; \
 	)
 
 .PHONY: build
