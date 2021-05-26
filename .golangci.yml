@@ -1,0 +1,26 @@
+run:
+  tests: false
+
+linters:
+  disable:
+    - exhaustivestruct # Many fields like sync.Mutex don't need to be initialized.
+    - funlen # Too opinionated on function lengths.
+    - gochecknoinits # We do use init functions.
+    - gochecknoglobals # Singleton pattern requires global state.
+    - gofumpt # We're using goimports, not gofumpt.
+    - interfacer # Deprecated.
+    - maligned # Deprecated.
+    - nlreturn # Too opinionated on new lines.
+    - revive # We're using golint, not revive.
+    - stylecheck # We're using golint, not stylecheck.
+    - wsl # Whitespace Linter. Too opinionated on cuddling and new lines.
+  presets:
+    - bugs
+    - complexity
+    - format
+    - performance
+    - style
+    - unused
+
+issues:
+  exclude-rules:
