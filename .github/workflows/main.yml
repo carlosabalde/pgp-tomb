@@ -18,6 +18,10 @@ jobs:
           apt-get update -y
           apt-get install -y git gpg gpg-agent xsel
 
+      - name: Import Alice's GPG private key
+        run: |
+          gpg --batch --yes --passphrase 's3cr3t' --import ./files/keys/alice.pri
+
       - name: Build, test & push code coverage
         run: |
           make test
