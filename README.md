@@ -171,7 +171,18 @@ Running `make shell` you can build & connect to a handy Docker container useful 
 
 - PGP Tomb only support public keys using an ASCII armor. You can adapt existing keys using the following command:
   ```
-  # cat 'key.pub' | gpg --enarmor | sed 's|ARMORED FILE|PUBLIC KEY BLOCK|'
+  # cat key.pub | gpg --enarmor | sed 's|ARMORED FILE|PUBLIC KEY BLOCK|'
+  ```
+
+- If you get errors like `openpgp: invalid data: tag byte does not have MSB set` for a public key, you can fix them repackaging the key:
+  ```
+  # cat key.pub | gpg --dearmor | gpg --enarmor | sed 's|ARMORED FILE|PUBLIC KEY BLOCK|'
+  ```
+
+- Official PGP support in Go has been [marked as frozen and deprecated](https://github.com/golang/go/issues/44226). That means bugs like https://github.com/golang/go/issues/15353 (i.e. `cannot encrypt a message to key id ... because it has no encryption keys` errors) won't be fixed and they might bit you. If you find issues with certain keys, general advise is to run a import / export cycle in order to keep public keys simple (i.e. no expired or revoked keys, etc.).
+  ```
+  # gpg --import key.pub
+  # gpg --export --export-options 'export-minimal,export-clean' --armor 0x...
   ```
 
 COPYRIGHT
