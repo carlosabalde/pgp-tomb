@@ -1,4 +1,5 @@
 - v? (?):
+    + Silently ignore tags when invalid JSON values are found.
     + ...
 
 - v0.3.9 (2019-12-28):

@@ -55,18 +55,19 @@ func (self *Secret) NewReader() (*Reader, error) {
 }
 
 func (self *Secret) unserializeTags(data []byte) error {
+	var tags []Tag
+
+	// Silently ignore invalid JSON values.
 	tagsMap := make(map[string]string)
-	if err := json.Unmarshal(data, &tagsMap); err != nil {
-		return err
+	if err := json.Unmarshal(data, &tagsMap); err == nil {
+		for name, value := range tagsMap {
+			tags = append(tags, Tag{
+				Name:  name,
+				Value: value,
+			})
+		}
 	}
 
-	var tags []Tag
-	for name, value := range tagsMap {
-		tags = append(tags, Tag{
-			Name:  name,
-			Value: value,
-		})
-	}
 	self.SetTags(tags)
 
 	return nil
